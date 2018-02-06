@@ -21,7 +21,7 @@ Install
 
 .. code-block:: bash
 
-    pip install buildpipe
+    pip install git+ssh://git@github.com/ksindi/buildpipe.git
 
 
 Example
