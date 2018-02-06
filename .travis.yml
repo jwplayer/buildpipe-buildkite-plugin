@@ -1,0 +1,23 @@
+sudo: false
+language: python
+python:
+- "3.6"
+install: pip install tox-travis
+script: tox
+cache:
+  - pip
+  - directories:
+    - ${HOME}/.cache
+notifications:
+  email: false
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: ksindi
+  skip_upload_docs: true
+  password:
+    secure: efbMWAjS3IcYEjqE456Uh+UhFWXFRN/y0xAJCLBC8MdpVq/5uAPmRzz551FCn4c94Ww5q3vnrRan9Jq1g/gpWVWzYmaCIdjta3RkH8MNIbIXjGUw5N4r8xt+XX+46f/fcOoRkQXW19QnyCSxbhzQ6HQc212W2pU40UDSxpESLtlHr18fo21gLqGxvfF1v50reEuewsnhQaG6iITdbpHkhxjpekn59B/uk3rCM6Q5ehQRqqCyMZx+P226GyDhYitIPklyJsoG/L0TZFkdtN51sKR+GyIjGsZIphDrSyBoFqWwazB98As62HN41PFsOZdbTakBIamgafOtmJ+gdghlf++W+Q20IFTs5XffUs9uoyUU4xiTqYjDPjwLbSF01n5oI67RP94PQW5AW7NZREfyBjP5cRmY2k1iDOe4QElehftpudnZbypIZa+ah0fzCvv/2FfkQpvxuCiruKZscou1thljMNz5K9ipOb0fCBYY6DRMnSfA4Y1OojiAwe8vYk/uqWnmpudzaWy2Q/VntiM+EqSdOwH4PMSM9gm3WhMK8LwtvUi8gpUfynJksSiuh/kfG93VYv1N0t/8vVn2rdrwdsPKmA7lZzkuGU27/rHa9BLpe5uNGDOald8q2jvpgJLSb7/DkTmy2JR5ZwEMEVRDbGtpbkiGuyQ/yO3C46/uGjY=
+  on:
+    python: "3.6"
+    tags: true
+    repo: ksindi/buildpipe
