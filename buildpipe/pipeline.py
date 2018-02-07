@@ -33,6 +33,10 @@ def get_git_branch():
     return branch
 
 
+def get_deploy_branch(config):
+    return config.deploy.branch or 'master'
+
+
 def get_changed_files(branch, deploy_branch):
     commit = os.getenv('BUILDKITE_COMMIT') or branch
     if branch == deploy_branch:
@@ -144,8 +148,10 @@ def generate_deploy_steps(stair, projects):
 
 
 def get_affected_projects(branch, config):
-    changed_files = get_changed_files(branch, config)
-    return get_changed_projects(changed_files, config.projects)
+    deploy_branch = get_deploy_branch(config)
+    changed_files = get_changed_files(branch, deploy_branch)
+    changed_projects = get_changed_projects(changed_files, config.projects)
+    return changed_projects
 
 
 def iter_stairs(stairs, branch, deploy_branch, can_autodeploy):
@@ -192,7 +198,7 @@ def compile_steps(config):
         deploy=generate_deploy_steps
     )
     branch = get_git_branch()
-    deploy_branch = config.deploy.branch or 'master'
+    deploy_branch = get_deploy_branch(config)
     projects = get_affected_projects(branch, config)
     can_autodeploy = check_autodeploy(config.deploy.to_dict())
 
