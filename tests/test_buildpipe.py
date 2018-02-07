@@ -112,12 +112,16 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
     - command:
       - cd myproject
       - make test
+      env:
+        PROJECT_NAME: myproject
       label: 'test myproject :snake:'
     - wait
     - command:
       - cd myproject
       - make build
       - make publish-image
+      env:
+        PROJECT_NAME: myproject
       label: 'build myproject :docker:'
     - wait
     - command:
@@ -130,6 +134,8 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
       - make deploy-staging
       concurrency: 1
       concurrency_group: deploy-staging-myproject
+      env:
+        PROJECT_NAME: myproject
       label: 'deploy-staging myproject :shipit:'
     - wait
     - command:
@@ -137,6 +143,8 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
       - make deploy-prod
       concurrency: 1
       concurrency_group: deploy-prod-myproject
+      env:
+        PROJECT_NAME: myproject
       label: 'deploy-prod myproject :shipit:'
     """).lstrip()
 
@@ -184,6 +192,8 @@ def test_not_deploy_branch(mock_get_changed_files, mock_get_git_branch):
     - command:
       - cd myproject
       - make test
+      env:
+        PROJECT_NAME: myproject
       label: 'test myproject :snake:'
     """).lstrip()
 
@@ -221,6 +231,8 @@ def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
     - command:
       - cd myproject
       - make test
+      env:
+        PROJECT_NAME: myproject
       label: 'test myproject :snake:'
     """).lstrip()
 
@@ -256,6 +268,8 @@ def test_buildkite_override(mock_get_changed_files, mock_get_git_branch):
       command:
       - cd myproject
       - make build
+      env:
+        PROJECT_NAME: myproject
       label: 'build myproject :docker:'
     """).lstrip()
 
@@ -308,12 +322,16 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
     - command:
       - cd myproject
       - make test
+      env:
+        PROJECT_NAME: myproject
       label: 'test myproject :snake:'
     - wait
     - command:
       - cd myproject
       - make build
       - make publish-image
+      env:
+        PROJECT_NAME: myproject
       label: 'build myproject :docker:'
     - wait
     - command:

@@ -95,7 +95,10 @@ def generate_test_steps(stair, projects):
             f'cd {project.path}',
             *stair.commands
         ],
-        'label': f'{stair.name} {project.name} {project.emoji}'
+        'label': f'{stair.name} {project.name} {project.emoji}',
+        'env': {
+            'PROJECT_NAME': project.name
+        }
     } for project in projects]
 
 
@@ -106,7 +109,10 @@ def generate_build_steps(stair, projects):
             f'cd {project.path}',
             *stair.commands
         ],
-        'label': f'{stair.name} {project.name} :docker:'
+        'label': f'{stair.name} {project.name} :docker:',
+        'env': {
+            'PROJECT_NAME': project.name
+        }
     } for project in projects]
 
 
@@ -130,7 +136,10 @@ def generate_deploy_steps(stair, projects):
         ],
         'label': f'{stair.name} {project.name} :shipit:',
         'concurrency': 1,
-        'concurrency_group': f'{stair.name}-{project.name}'
+        'concurrency_group': f'{stair.name}-{project.name}',
+        'env': {
+            'PROJECT_NAME': project.name
+        }
     } for project in projects]
 
 
