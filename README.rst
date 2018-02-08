@@ -79,7 +79,7 @@ The above buildpipe config file specifies the following:
 - The groups of steps ("stairs") for each project are: test, build, tag, deploy-staging and deploy-prod
 - Any git file changes that are subpaths of either project's path will trigger steps for each project
 - In addition, pyproject has jsproject as a dependency; any changes in jsproject will trigger steps for pyproject to be included in the pipeline; this is conveniant for shared utility packages
-- Deploys will only happen in master branch between 9am and 5pm ET during weekdays that are not on Christmas or New Years day
+- Deploys will only happen in master branch between 9am and 5pm ET during weekdays that are not on New Year's Eve and Day
 - Project jsproject will never create step deploy-prod
 - Stairs like build can be overridden with additional buildkite configuration such as the agent queue
 
