@@ -83,6 +83,47 @@ The above buildpipe config file specifies the following:
 - Project jsproject will never create step deploy-prod
 - Stairs like build can be overridden with additional buildkite configuration such as the agent queue
 
+For example, if only files under `py_project` were touched and the merge happened during business hours, then buildpipe would create the following steps:
+
+    steps:
+        - wait
+        - command:
+          - cd py_project
+          - make test
+          env:
+            PROJECT_NAME: pyproject
+          label: 'test pyproject :python:'
+        - wait
+        - command:
+          - cd py_project
+          - make build
+          - make publish-image
+          env:
+            PROJECT_NAME: pyproject
+          label: 'build pyproject :docker:'
+        - wait
+        - command:
+          - make tag
+          - buildkite-agent meta-data set "project:pyproject" "true"
+          label: 'tag :github:'
+        - wait
+        - command:
+          - cd py_project
+          - make deploy-staging
+          concurrency: 1
+          concurrency_group: deploy-staging-pyproject
+          env:
+            PROJECT_NAME: pyproject
+          label: 'deploy-staging myproject :shipit:'
+        - wait
+        - command:
+          - cd py_project
+          - make deploy-prod
+          concurrency: 1
+          concurrency_group: deploy-prod-pyproject
+          env:
+            PROJECT_NAME: pyproject
+          label: 'deploy-prod pyproject :shipit:'
 
 In the Buildkite pipeline settings UI you just have to add the following in "Commands to run":
 
