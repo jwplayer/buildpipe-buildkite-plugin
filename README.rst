@@ -127,7 +127,8 @@ For example, if only files under `py_project` were touched and the merge happene
             PROJECT_NAME: pyproject
           label: 'deploy-prod pyproject :shipit:'
 
-## Set Up
+Set Up
+------
 
 In the Buildkite pipeline settings UI you just have to add the following in "Commands to run":
 
