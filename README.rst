@@ -116,7 +116,7 @@ For example, if only files under `py_project` were touched and the merge happene
           concurrency_group: deploy-staging-pyproject
           env:
             PROJECT_NAME: pyproject
-          label: 'deploy-staging myproject :shipit:'
+          label: 'deploy-staging pyproject :shipit:'
         - wait
         - command:
           - cd py_project
