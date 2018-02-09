@@ -85,6 +85,8 @@ The above buildpipe config file specifies the following:
 
 For example, if only files under `py_project` were touched and the merge happened during business hours, then buildpipe would create the following steps:
 
+.. code-block:: yaml
+
     steps:
         - wait
         - command:
