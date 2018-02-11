@@ -31,10 +31,10 @@
           "items": {
             "type": "string"
           },
-          "description": "Projects to also build by name"
+          "description": "Paths to include in dependencies"
         }
       },
-      "required": ["name", "path", "emoji"],
+      "required": ["name", "path"],
       "additionalProperties": false
     },
     "Stair": {
@@ -44,23 +44,24 @@
           "type": "string",
           "description": "Name of stair"
         },
-        "type": {
-          "enum": ["test", "build", "tag", "deploy"],
-          "description": "Type of stair"
+        "scope": {
+          "enum": ["stair", "project"],
+          "description": "Scope of stair (E.g. projects will build a step per project)"
         },
-        "commands": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Bash commands to run"
+        "emoji": {
+          "type": "string",
+          "description": "Emoji to use in labels"
         },
-        "buildkite_override": {
+        "deploy": {
+          "type": "boolean",
+          "description": "Whether to apply deployment logic such as business hour rules"
+        },
+        "buildkite": {
           "type": "object",
-          "description": "Add additional Buildkite step information"
+          "description": "Buildkite step details"
         }
       },
-      "required": ["name", "type", "commands"],
+      "required": ["name", "scope", "buildkite"],
       "additionalProperties": false
     }
   },
@@ -88,7 +89,8 @@
           "type": "string",
           "description": "ISO dates balcklisted from deployment (Example: \\d{4}\\-(01\\-01|12\\-31))"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "stairs": {
       "type": "array",

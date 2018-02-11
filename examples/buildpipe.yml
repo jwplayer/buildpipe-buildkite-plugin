@@ -6,32 +6,50 @@ deploy:
   blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
 stairs:
   - name: test
-    type: test
-    commands:
-      - make test
+    scope: project
+    buildkite:
+      command:
+        - cd $PROJECT_PATH
+        - make test
   - name: build
-    type: build
-    commands:
-      - make build
-      - make publish-image
-    buildkite_override:
+    scope: project
+    emoji: ":package:"
+    buildkite:
+      branches: "master"
+      command:
+        - cd $PROJECT_PATH
+        - make build
+        - make publish-image
       agents:
         - queue=build
   - name: tag
-    type: tag
-    commands:
-      - make tag-release
+    scope: stair
+    emoji: ":github:"
+    buildkite:
+      branches: "master"
+      command:
+        - make tag-release
   - name: deploy-staging
-    type: deploy
-    commands:
-      - make deploy-staging
+    scope: project
+    emoji: ":shipit:"
+    deploy: true
+    buildkite:
+      branches: "master"
+      command:
+        - cd $PROJECT_PATH
+        - make deploy-staging
   - name: deploy-prod
-    type: deploy
-    commands:
-      - make deploy-prod
+    scope: project
+    emoji: ":shipit:"
+    deploy: true
+    buildkite:
+      branches: "master"
+      command:
+        - cd $PROJECT_PATH
+        - make deploy-prod
 projects:
   - name: jsproject
-    path: js_project
+    path: jsproject
     emoji: ":javascript:"
     skip_stairs:
       - deploy-prod

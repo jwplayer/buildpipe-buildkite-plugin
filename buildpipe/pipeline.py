@@ -8,13 +8,16 @@ import datetime
 import functools
 import subprocess
 
-import box
 import yaml
 import pytz
 import jsonschema
+from box import Box
 
 
-class PipelineException(Exception):
+BOX_CONFIG = dict(frozen_box=True, default_box=True)
+
+
+class BuildpipeException(Exception):
     pass
 
 
@@ -73,18 +76,13 @@ def check_project_affected(changed_files, project):
 
 
 def get_changed_projects(changed_files, projects):
-    changed_projects = set()
-    for project in projects:
-        if check_project_affected(changed_files, project):
-            changed_projects.add(project)
-    return changed_projects
+    return {p for p in projects if check_project_affected(changed_files, p)}
 
 
 def buildkite_override(step_func):
     @functools.wraps(step_func)
     def func_wrapper(stair, projects):
-        return [{**step, **stair.to_dict().get('buildkite_override', {})}
-                for step in step_func(stair, projects)]
+        return [{**step, **stair.buildkite.to_dict()} for step in step_func(stair, projects)]
     return func_wrapper
 
 
@@ -93,85 +91,54 @@ def generate_wait_step():
 
 
 @buildkite_override
-def generate_test_steps(stair, projects):
-    return [{
-        'command': [
-            f'cd {project.path}',
-            *stair.commands
-        ],
-        'label': f'{stair.name} {project.name} {project.emoji}',
-        'env': {
-            'PROJECT_NAME': project.name
+def generate_project_steps(stair, projects):
+    steps = []
+    for project in projects:
+        step = {
+            'label': f'{stair.name} {project.name} {stair.emoji or project.emoji or ""}',
+            'env': {
+                'STAIR_NAME': stair.name,
+                'STAIR_SCOPE': stair.scope,
+                'PROJECT_NAME': project.name,
+                'PROJECT_PATH': project.path
+            }
         }
-    } for project in projects]
+        if stair.deploy:
+            step['concurrency'] = 1
+            step['concurrency_group'] = f'{stair.name}-{project.name}'
+        steps.append(step)
+    return steps
 
 
 @buildkite_override
-def generate_build_steps(stair, projects):
+def generate_stair_steps(stair, projects):
     return [{
-        'command': [
-            f'cd {project.path}',
-            *stair.commands
-        ],
-        'label': f'{stair.name} {project.name} :docker:',
+        'label': f'{stair.name} {stair.emoji or ""}',
         'env': {
-            'PROJECT_NAME': project.name
+            'STAIR_NAME': stair.name,
+            'STAIR_SCOPE': stair.scope
         }
-    } for project in projects]
-
-
-@buildkite_override
-def generate_tag_steps(stair, projects):
-    return [{
-        'command': [
-            *stair.commands,
-            *[f'buildkite-agent meta-data set "project:{p.name}" "true"' for p in projects]
-        ],
-        'label': f'{stair.name} :github:'
     }] if projects else []
-
-
-@buildkite_override
-def generate_deploy_steps(stair, projects):
-    return [{
-        'command': [
-            f'cd {project.path}',
-            *stair.commands
-        ],
-        'label': f'{stair.name} {project.name} :shipit:',
-        'concurrency': 1,
-        'concurrency_group': f'{stair.name}-{project.name}',
-        'env': {
-            'PROJECT_NAME': project.name
-        }
-    } for project in projects]
 
 
 def get_affected_projects(branch, config):
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch)
-    changed_projects = get_changed_projects(changed_files, config.projects)
-    return changed_projects
+    return get_changed_projects(changed_files, config.projects)
 
 
-def iter_stairs(stairs, branch, deploy_branch, can_autodeploy):
+def iter_stairs(stairs, can_autodeploy):
     for stair in stairs:
-        if any([
-            stair.type == 'test',
-            stair.type in {'build', 'tag'} and branch == deploy_branch,
-            stair.type == 'deploy' and branch == deploy_branch and can_autodeploy,
-        ]):
+        is_deploy = stair.deploy is True
+        if not is_deploy or (is_deploy and can_autodeploy):
             yield stair
 
 
 def check_autodeploy(deploy):
     now = datetime.datetime.now(pytz.timezone(deploy.get('timezone', 'UTC')))
     check_hours = re.match(deploy.get('allowed_hours_regex', '\d|1\d|2[0-3]'), str(now.hour))
-    check_days = re.match(deploy.get('allowed_weekdays_regex', '[0-6]'), str(now.isoweekday()))
-    if 'blacklist_dates_regex' in deploy:
-        check_blacklist = not re.match(deploy['blacklist_dates_regex'], now.strftime('%Y-%m-%d'))
-    else:
-        check_blacklist = True
+    check_days = re.match(deploy.get('allowed_weekdays_regex', '[1-7]'), str(now.isoweekday()))
+    check_blacklist = not re.match(deploy.get('blacklist_dates_regex', 'A'), now.strftime('%Y-%m-%d'))
     return all([check_hours, check_days, check_blacklist])
 
 
@@ -179,51 +146,39 @@ def validate_config(config):
     schema_path = pathlib.Path(__file__).parent / 'schema.json'
     with schema_path.open() as f_schema:
         schema = json.load(f_schema)
-    jsonschema.validate(json.loads(config.to_json()), schema)
 
-    stair_names = set(stair.name for stair in config.stairs)
+    try:
+        jsonschema.validate(json.loads(config.to_json()), schema)
+    except jsonschema.exceptions.ValidationError as e:
+        raise BuildpipeException("Invalid schema") from e
+
+    valid_stair_names = set(stair.name for stair in config.stairs)
     for project in config.projects:
         for stair_name in project.skip_stairs:
-            if stair_name not in stair_names:
-                raise PipelineException(f'Unrecognized stair {stair_name} for project {project.name}')  # noqa: E501
+            if stair_name not in valid_stair_names:
+                raise BuildpipeException(f'Unrecognized stair {stair_name} for project {project.name}')  # noqa: E501
     return True
 
 
 def compile_steps(config):
     validate_config(config)
-    step_fn = dict(
-        test=generate_test_steps,
-        build=generate_build_steps,
-        tag=generate_tag_steps,
-        deploy=generate_deploy_steps
-    )
     branch = get_git_branch()
-    deploy_branch = get_deploy_branch(config)
     projects = get_affected_projects(branch, config)
     can_autodeploy = check_autodeploy(config.deploy.to_dict())
+    scope_fn = dict(project=generate_project_steps, stair=generate_stair_steps)
 
     steps = []
-    for stair in iter_stairs(config.stairs, branch, deploy_branch, can_autodeploy):
+    for stair in iter_stairs(config.stairs, can_autodeploy):
         stair_projects = [p for p in projects if stair.name not in p.skip_stairs]
         if stair_projects:
             steps += generate_wait_step()
-            steps += step_fn[stair.type](stair, stair_projects)
+            steps += scope_fn[stair.scope](stair, stair_projects)
 
-    return steps
-
-
-def box_from_io(buf):
-    return box.Box(yaml.load(buf), frozen_box=True, default_box=True)
-
-
-def steps_to_io(steps, buf):
-    yaml.safe_dump({'steps': steps}, buf, default_flow_style=False)
+    return Box({'steps': steps})
 
 
 def create_pipeline(infile, outfile, dry_run=False):
-    with open(infile) as f_in:
-        config = box_from_io(f_in)
+    config = Box.from_yaml(filename=infile, **BOX_CONFIG)
     steps = compile_steps(config)
     if not dry_run:
-        with open(outfile, 'w') as f_out:
-            steps_to_io(steps, f_out)
+        steps.to_yaml(filename=outfile, Dumper=yaml.dumper.SafeDumper)

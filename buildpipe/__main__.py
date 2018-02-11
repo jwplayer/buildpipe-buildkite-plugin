@@ -14,5 +14,4 @@ def create_parser():
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    print("Args: ", args)
     pipeline.create_pipeline(**vars(args))

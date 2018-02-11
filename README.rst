@@ -14,6 +14,7 @@ Buildpipe allows you to dynamically generate your Buildkite pipelines so that yo
 
 - Manage continuous deployment logic such as only deploying during business hours
 - Maintain monorepos by only looking at git changes in specified projects
+- Specify dependencies between projects so that their steps are concurrent
 
 
 Install
@@ -29,104 +30,129 @@ Example
 
 .. code-block:: yaml
 
-    deploy:
-      branch: master
-      timezone: US/Eastern
-      allowed_hours_regex: '0[9]|1[0-7]'
-      allowed_weekdays_regex: '[1-5]'
-      blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
     stairs:
       - name: test
-        type: test
-        commands:
-          - make test
+        scope: project
+        buildkite:
+          command:
+            - cd $PROJECT_PATH
+            - make test
       - name: build
-        type: build
-        commands:
-          - make build
-          - make publish-image
-        buildkite_override:
+        scope: project
+        emoji: ":docker:"
+        buildkite:
           agents:
             - queue=build
+          branches: master
+          command:
+            - make build
+            - make publish-image
       - name: tag
-        type: tag
-        commands:
-          - make tag-release
+        scope: stair
+        emoji: ":github:"
+        buildkite:
+          branches: master
+          command: make tag
       - name: deploy-staging
-        type: deploy
-        commands:
-          - make deploy-staging
+        scope: project
+        emoji: ":shipit:"
+        deploy: true
+        buildkite:
+          branches: master
+          command:
+            - cd $PROJECT_PATH
+            - make deploy-staging
       - name: deploy-prod
-        type: deploy
-        commands:
-          - make deploy-prod
+        scope: project
+        emoji: ":shipit:"
+        deploy: true
+        buildkite:
+          branches: master
+          command:
+            - cd $PROJECT_PATH
+            - make deploy-prod
     projects:
+      - name: pyproject
+        path: pyproject
+        emoji: ":python:"
+        dependencies:
+          - jsproject
       - name: jsproject
         path: jsproject
         emoji: ":javascript:"
         skip_stairs:
-          - deploy-prod
-      - name: pyproject
-        path: py_project
-        emoji: ":python:"
-        dependencies:
-          - jsproject
-
+          - deploy-staging
 
 The above buildpipe config file specifies the following:
 
 - There are two projects to track in the repo: jsproject and pyproject
-- The groups of steps ("stairs") for each project are: test, build, tag, deploy-staging and deploy-prod
+- A stair is a group of steps; it can have a scope of "project" or "start", the former which will create a step for each project affected
 - Any git file changes that are subpaths of either project's path will trigger steps for each project
-- If a step is specific to a project, then the step commands start with entering that projects top-level path; one can use Makefile inheritance to take advantage of project specific variables
-- In addition, pyproject has jsproject as a dependency; any changes in jsproject will trigger steps for pyproject to be included in the pipeline; this is conveniant for shared utility packages
-- Deploys will only happen in master branch between 9am and 5pm ET during weekdays that are not on New Year's Eve and Day
-- Project jsproject will never create step deploy-prod
-- Stairs like build can be overridden with additional buildkite configuration such as the agent queue
+- In addition, pyproject has jsproject as a dependency: any changes in jsproject will trigger steps for pyproject to be included in the pipeline
+- Stairs with "deploy: true" will only happen in master branch between 9am and 5pm ET during weekdays that are not on New Year's Eve and Day
+- Project jsproject will never create step deploy-staging
 
-For example, if only files under `py_project` were touched and the merge happened during business hours, then buildpipe would create the following steps:
+For example, if only files under `pyproject` were touched and the merge happened during business hours, then buildpipe would create the following steps:
 
 .. code-block:: yaml
 
     steps:
-        - wait
-        - command:
-          - cd py_project
-          - make test
-          env:
-            PROJECT_NAME: pyproject
-          label: 'test pyproject :python:'
-        - wait
-        - command:
-          - cd py_project
-          - make build
-          - make publish-image
-          env:
-            PROJECT_NAME: pyproject
-          label: 'build pyproject :docker:'
-        - wait
-        - command:
-          - make tag
-          - buildkite-agent meta-data set "project:pyproject" "true"
-          label: 'tag :github:'
-        - wait
-        - command:
-          - cd py_project
-          - make deploy-staging
-          concurrency: 1
-          concurrency_group: deploy-staging-pyproject
-          env:
-            PROJECT_NAME: pyproject
-          label: 'deploy-staging pyproject :shipit:'
-        - wait
-        - command:
-          - cd py_project
-          - make deploy-prod
-          concurrency: 1
-          concurrency_group: deploy-prod-pyproject
-          env:
-            PROJECT_NAME: pyproject
-          label: 'deploy-prod pyproject :shipit:'
+      - wait
+      - command:
+        - cd $PROJECT_PATH
+        - make test
+        env:
+          PROJECT_NAME: pyproject
+          PROJECT_PATH: pyproject
+          STAIR_NAME: test
+          STAIR_SCOPE: project
+        label: 'test pyproject :python:'
+      - wait
+      - agents:
+        - queue=build
+        branches: master
+        command:
+        - make build
+        - make publish-image
+        env:
+          PROJECT_NAME: pyproject
+          PROJECT_PATH: pyproject
+          STAIR_NAME: build
+          STAIR_SCOPE: project
+        label: 'build pyproject :docker:'
+      - wait
+      - branches: master
+        command: make tag
+        env:
+          STAIR_NAME: tag
+          STAIR_SCOPE: stair
+        label: 'tag :github:'
+      - wait
+      - branches: master
+        command:
+        - cd $PROJECT_PATH
+        - make deploy-staging
+        concurrency: 1
+        concurrency_group: deploy-staging-pyproject
+        env:
+          PROJECT_NAME: pyproject
+          PROJECT_PATH: pyproject
+          STAIR_NAME: deploy-staging
+          STAIR_SCOPE: project
+        label: 'deploy-staging pyproject :shipit:'
+      - wait
+      - branches: master
+        command:
+        - cd $PROJECT_PATH
+        - make deploy-prod
+        concurrency: 1
+        concurrency_group: deploy-prod-pyproject
+        env:
+          PROJECT_NAME: pyproject
+          PROJECT_PATH: pyproject
+          STAIR_NAME: deploy-prod
+          STAIR_SCOPE: project
+        label: 'deploy-prod pyproject :shipit:'
 
 Set Up
 ------
