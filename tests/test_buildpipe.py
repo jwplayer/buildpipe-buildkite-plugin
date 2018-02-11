@@ -6,12 +6,21 @@ import datetime
 import textwrap
 from unittest import mock
 
+import yaml
 import pytest
 import freezegun
-import jsonschema
+from box import Box
 
 from buildpipe import pipeline
 from buildpipe.__main__ import create_parser
+
+
+def box_from_yaml(s):
+    return Box(yaml.load(s), **pipeline.BOX_CONFIG)
+
+
+def steps_to_yaml(steps):
+    return steps.to_yaml(Dumper=yaml.dumper.SafeDumper)
 
 
 @pytest.mark.parametrize('changed_files, expected', [
@@ -24,7 +33,7 @@ from buildpipe.__main__ import create_parser
 ])
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
-    config = pipeline.box_from_io(io.StringIO("""
+    config = box_from_yaml(io.StringIO("""
     stairs: []
     projects:
       - name: project1
@@ -54,11 +63,11 @@ def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
     (datetime.datetime(2013, 12, 30, 10, 0, 0), True),
     (datetime.datetime(2013, 11, 22, 12, 0, 0), True),
     (datetime.datetime(2013, 11, 23, 12, 0, 0), False),  # Saturday
+    (datetime.datetime(2013, 11, 24, 12, 0, 0), False),  # Sunday
 ])
 def test_check_autodeploy(test_dt, expected):
-    config = pipeline.box_from_io(io.StringIO("""
+    config = box_from_yaml(io.StringIO("""
     deploy:
-      branch: master
       timezone: UTC
       allowed_hours_regex: '0[9]|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
@@ -71,206 +80,156 @@ def test_check_autodeploy(test_dt, expected):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
-    config = pipeline.box_from_io(io.StringIO("""
+    config = box_from_yaml("""
     deploy: {}
     stairs:
       - name: test
-        type: test
-        commands:
-          - make test
+        scope: project
+        buildkite:
+          command:
+            - cd $PROJECT_PATH
+            - make test
       - name: build
-        type: build
-        commands:
-          - make build
-          - make publish-image
+        scope: project
+        emoji: ":docker:"
+        buildkite:
+          agents:
+            - queue=build
+          branches: master
+          command:
+            - make build
+            - make publish-image
       - name: tag
-        type: tag
-        commands:
-          - make tag
+        scope: stair
+        emoji: ":github:"
+        buildkite:
+          branches: master
+          command: make tag
       - name: deploy-staging
-        type: deploy
-        commands:
-          - make deploy-staging
+        scope: project
+        emoji: ":shipit:"
+        deploy: true
+        buildkite:
+          branches: master
+          command:
+            - cd $PROJECT_PATH
+            - make deploy-staging
       - name: deploy-prod
-        type: deploy
-        commands:
-          - make deploy-prod
+        scope: project
+        emoji: ":shipit:"
+        deploy: true
+        buildkite:
+          branches: master
+          command:
+            - cd $PROJECT_PATH
+            - make deploy-prod
     projects:
-      - name: myproject
-        path: myproject
-        emoji: ":snake:"
-    """))
-    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
+      - name: pyproject
+        path: pyproject
+        emoji: ":python:"
+    """)
+    mock_get_changed_files.return_value = {'origin..HEAD', 'pyproject/README.md'}
     mock_get_git_branch.return_value = 'master'
     steps = pipeline.compile_steps(config)
-    with io.StringIO() as f_out:
-        pipeline.steps_to_io(steps, f_out)
-        pipeline_yml = f_out.getvalue()
+    pipeline_yml = steps_to_yaml(steps)
     assert pipeline_yml == textwrap.dedent("""
     steps:
     - wait
     - command:
-      - cd myproject
+      - cd $PROJECT_PATH
       - make test
       env:
-        PROJECT_NAME: myproject
-      label: 'test myproject :snake:'
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: 'test pyproject :python:'
     - wait
-    - command:
-      - cd myproject
+    - agents:
+      - queue=build
+      branches: master
+      command:
       - make build
       - make publish-image
       env:
-        PROJECT_NAME: myproject
-      label: 'build myproject :docker:'
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: build
+        STAIR_SCOPE: project
+      label: 'build pyproject :docker:'
     - wait
-    - command:
-      - make tag
-      - buildkite-agent meta-data set "project:myproject" "true"
+    - branches: master
+      command: make tag
+      env:
+        STAIR_NAME: tag
+        STAIR_SCOPE: stair
       label: 'tag :github:'
     - wait
-    - command:
-      - cd myproject
+    - branches: master
+      command:
+      - cd $PROJECT_PATH
       - make deploy-staging
       concurrency: 1
-      concurrency_group: deploy-staging-myproject
+      concurrency_group: deploy-staging-pyproject
       env:
-        PROJECT_NAME: myproject
-      label: 'deploy-staging myproject :shipit:'
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: deploy-staging
+        STAIR_SCOPE: project
+      label: 'deploy-staging pyproject :shipit:'
     - wait
-    - command:
-      - cd myproject
+    - branches: master
+      command:
+      - cd $PROJECT_PATH
       - make deploy-prod
       concurrency: 1
-      concurrency_group: deploy-prod-myproject
+      concurrency_group: deploy-prod-pyproject
       env:
-        PROJECT_NAME: myproject
-      label: 'deploy-prod myproject :shipit:'
-    """).lstrip()
-
-
-@mock.patch('buildpipe.pipeline.get_git_branch')
-@mock.patch('buildpipe.pipeline.get_changed_files')
-def test_not_deploy_branch(mock_get_changed_files, mock_get_git_branch):
-    config = pipeline.box_from_io(io.StringIO("""
-    stairs:
-      - name: test
-        type: test
-        commands:
-          - make test
-      - name: build
-        type: build
-        commands:
-          - make build
-          - make publish-image
-      - name: tag
-        type: tag
-        commands:
-          - make tag
-      - name: deploy-staging
-        type: deploy
-        commands:
-          - make deploy-staging
-      - name: deploy-prod
-        type: deploy
-        commands:
-          - make deploy-prod
-    projects:
-      - name: myproject
-        path: myproject
-        emoji: ":snake:"
-    """))
-    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
-    mock_get_git_branch.return_value = 'feature'
-    steps = pipeline.compile_steps(config)
-    with io.StringIO() as f_out:
-        pipeline.steps_to_io(steps, f_out)
-        pipeline_yml = f_out.getvalue()
-    assert pipeline_yml == textwrap.dedent("""
-    steps:
-    - wait
-    - command:
-      - cd myproject
-      - make test
-      env:
-        PROJECT_NAME: myproject
-      label: 'test myproject :snake:'
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: deploy-prod
+        STAIR_SCOPE: project
+      label: 'deploy-prod pyproject :shipit:'
     """).lstrip()
 
 
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
-    config = pipeline.box_from_io(io.StringIO("""
+    config = box_from_yaml("""
     stairs:
       - name: test
-        type: test
-        commands:
-          - make test
+        scope: project
+        buildkite:
+          command:
+            - make test
       - name: build
-        type: build
-        commands:
-          - make build
-          - make publish-image
+        scope: project
+        buildkite:
+          command:
+            - make build
     projects:
       - name: myproject
         path: myproject
-        emoji: ":snake:"
+        emoji: ":python:"
         skip_stairs:
           - build
-    """))
+    """)
     mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
     mock_get_git_branch.return_value = 'master'
     steps = pipeline.compile_steps(config)
-    with io.StringIO() as f_out:
-        pipeline.steps_to_io(steps, f_out)
-        pipeline_yml = f_out.getvalue()
+    pipeline_yml = steps_to_yaml(steps)
     assert pipeline_yml == textwrap.dedent("""
     steps:
     - wait
     - command:
-      - cd myproject
       - make test
       env:
         PROJECT_NAME: myproject
-      label: 'test myproject :snake:'
-    """).lstrip()
-
-
-@mock.patch('buildpipe.pipeline.get_git_branch')
-@mock.patch('buildpipe.pipeline.get_changed_files')
-def test_buildkite_override(mock_get_changed_files, mock_get_git_branch):
-    config = pipeline.box_from_io(io.StringIO("""
-    stairs:
-      - name: build
-        type: build
-        commands:
-          - make build
-        buildkite_override:
-          agents:
-            - queue=default
-    projects:
-      - name: myproject
-        path: myproject
-        emoji: ":snake:"
-    """))
-    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
-    mock_get_git_branch.return_value = 'master'
-    steps = pipeline.compile_steps(config)
-    with io.StringIO() as f_out:
-        pipeline.steps_to_io(steps, f_out)
-        pipeline_yml = f_out.getvalue()
-    assert pipeline_yml == textwrap.dedent("""
-    steps:
-    - wait
-    - agents:
-      - queue=default
-      command:
-      - cd myproject
-      - make build
-      env:
-        PROJECT_NAME: myproject
-      label: 'build myproject :docker:'
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: 'test myproject :python:'
     """).lstrip()
 
 
@@ -278,103 +237,80 @@ def test_buildkite_override(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
-    config = pipeline.box_from_io(io.StringIO("""
+    config = box_from_yaml("""
     deploy:
       branch: master
       timezone: UTC
       allowed_hours_regex: '0[9]|1[0-7]'
     stairs:
       - name: test
-        type: test
-        commands:
-          - make test
-      - name: build
-        type: build
-        commands:
-          - make build
-          - make publish-image
-      - name: tag
-        type: tag
-        commands:
-          - make tag
-      - name: deploy-staging
-        type: deploy
-        commands:
-          - make deploy-staging
-      - name: deploy-prod
-        type: deploy
-        commands:
-          - make deploy-prod
+        scope: project
+        buildkite:
+          command:
+            - make test
+      - name: deploy
+        scope: project
+        deploy: true
+        buildkite:
+          command:
+            - make deploy
     projects:
       - name: myproject
         path: myproject
-        emoji: ":snake:"
-    """))
+        emoji: ":python:"
+    """)
     mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
     mock_get_git_branch.return_value = 'master'
     steps = pipeline.compile_steps(config)
-    with io.StringIO() as f_out:
-        pipeline.steps_to_io(steps, f_out)
-        pipeline_yml = f_out.getvalue()
+    pipeline_yml = steps_to_yaml(steps)
     assert pipeline_yml == textwrap.dedent("""
     steps:
     - wait
     - command:
-      - cd myproject
       - make test
       env:
         PROJECT_NAME: myproject
-      label: 'test myproject :snake:'
-    - wait
-    - command:
-      - cd myproject
-      - make build
-      - make publish-image
-      env:
-        PROJECT_NAME: myproject
-      label: 'build myproject :docker:'
-    - wait
-    - command:
-      - make tag
-      - buildkite-agent meta-data set "project:myproject" "true"
-      label: 'tag :github:'
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: 'test myproject :python:'
     """).lstrip()
 
 
 def test_invalidate_config():
-    with pytest.raises(jsonschema.exceptions.ValidationError):
-        config = pipeline.box_from_io(io.StringIO("""
+    with pytest.raises(pipeline.BuildpipeException):
+        config = box_from_yaml("""
         stairs:
           - name: test
-            type: test
-            commands:
+            scope: project
+            command:
               - make test
-        """))
+        """)
         pipeline.compile_steps(config)
 
 
 def test_pipeline_exception():
-    with pytest.raises(pipeline.PipelineException):
-        config = pipeline.box_from_io(io.StringIO("""
+    with pytest.raises(pipeline.BuildpipeException):
+        config = box_from_yaml("""
         deploy: {}
         stairs:
           - name: test
-            type: test
-            commands:
-              - make test
+            scope: project
+            buildkite:
+              command:
+                - make test
         projects:
           - name: myproject
             path: myproject
-            emoji: ":snake:"
+            emoji: ":python:"
             skip_stairs:
               - foo
-        """))
+        """)
         pipeline.compile_steps(config)
 
 
 def test_create_pipeline():
-    parent = pathlib.Path(__file__).parent.parent
-    infile = parent / 'examples/buildpipe.yml'
+    infile = str(pathlib.Path(__file__).parent.parent / 'examples/buildpipe.yml')
     with tempfile.NamedTemporaryFile() as f_out:
         pipeline.create_pipeline(infile, f_out.name)
 
