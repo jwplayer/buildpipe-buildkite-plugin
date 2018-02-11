@@ -35,7 +35,7 @@ Example
         scope: project
         buildkite:
           command:
-            - cd $PROJECT_PATH
+            - cd $$PROJECT_PATH
             - make test
       - name: build
         scope: project
@@ -45,6 +45,7 @@ Example
             - queue=build
           branches: master
           command:
+            - cd $$PROJECT_PATH
             - make build
             - make publish-image
       - name: tag
@@ -60,7 +61,7 @@ Example
         buildkite:
           branches: master
           command:
-            - cd $PROJECT_PATH
+            - cd $$PROJECT_PATH
             - make deploy-staging
       - name: deploy-prod
         scope: project
@@ -69,7 +70,7 @@ Example
         buildkite:
           branches: master
           command:
-            - cd $PROJECT_PATH
+            - cd $$PROJECT_PATH
             - make deploy-prod
     projects:
       - name: pyproject
@@ -99,7 +100,7 @@ For example, if only files under `pyproject` were touched and the merge happened
     steps:
       - wait
       - command:
-        - cd $PROJECT_PATH
+        - cd $$PROJECT_PATH
         - make test
         env:
           PROJECT_NAME: pyproject
@@ -112,6 +113,7 @@ For example, if only files under `pyproject` were touched and the merge happened
         - queue=build
         branches: master
         command:
+        - cd $$PROJECT_PATH
         - make build
         - make publish-image
         env:
@@ -130,7 +132,7 @@ For example, if only files under `pyproject` were touched and the merge happened
       - wait
       - branches: master
         command:
-        - cd $PROJECT_PATH
+        - cd $$PROJECT_PATH
         - make deploy-staging
         concurrency: 1
         concurrency_group: deploy-staging-pyproject
@@ -143,7 +145,7 @@ For example, if only files under `pyproject` were touched and the merge happened
       - wait
       - branches: master
         command:
-        - cd $PROJECT_PATH
+        - cd $$PROJECT_PATH
         - make deploy-prod
         concurrency: 1
         concurrency_group: deploy-prod-pyproject
