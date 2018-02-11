@@ -87,7 +87,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         scope: project
         buildkite:
           command:
-            - cd $PROJECT_PATH
+            - cd $$PROJECT_PATH
             - make test
       - name: build
         scope: project
@@ -97,6 +97,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
             - queue=build
           branches: master
           command:
+            - cd $$PROJECT_PATH
             - make build
             - make publish-image
       - name: tag
@@ -112,7 +113,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         buildkite:
           branches: master
           command:
-            - cd $PROJECT_PATH
+            - cd $$PROJECT_PATH
             - make deploy-staging
       - name: deploy-prod
         scope: project
@@ -121,7 +122,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         buildkite:
           branches: master
           command:
-            - cd $PROJECT_PATH
+            - cd $$PROJECT_PATH
             - make deploy-prod
     projects:
       - name: pyproject
@@ -136,7 +137,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
     steps:
     - wait
     - command:
-      - cd $PROJECT_PATH
+      - cd $$PROJECT_PATH
       - make test
       env:
         PROJECT_NAME: pyproject
@@ -149,6 +150,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
       - queue=build
       branches: master
       command:
+      - cd $$PROJECT_PATH
       - make build
       - make publish-image
       env:
@@ -167,7 +169,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
     - wait
     - branches: master
       command:
-      - cd $PROJECT_PATH
+      - cd $$PROJECT_PATH
       - make deploy-staging
       concurrency: 1
       concurrency_group: deploy-staging-pyproject
@@ -180,7 +182,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
     - wait
     - branches: master
       command:
-      - cd $PROJECT_PATH
+      - cd $$PROJECT_PATH
       - make deploy-prod
       concurrency: 1
       concurrency_group: deploy-prod-pyproject
