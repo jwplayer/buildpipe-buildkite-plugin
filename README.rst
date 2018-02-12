@@ -30,6 +30,13 @@ Example
 
 .. code-block:: yaml
 
+
+    deploy:
+      branch: master
+      timezone: US/Eastern
+      allowed_hours_regex: '0[9]|1[0-7]'
+      allowed_weekdays_regex: '[1-5]'
+      blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
     stairs:
       - name: test
         scope: project
