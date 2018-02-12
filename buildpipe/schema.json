@@ -32,6 +32,13 @@
             "type": "string"
           },
           "description": "Paths to include in dependencies"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Filter steps by matching tags"
         }
       },
       "required": ["name", "path"],
@@ -59,6 +66,13 @@
         "buildkite": {
           "type": "object",
           "description": "Buildkite step details"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Filter steps by matching tags"
         }
       },
       "required": ["name", "scope", "buildkite"],
