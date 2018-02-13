@@ -254,8 +254,12 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
           - integration
       - name: project2
         path: project2
+      - name: project3
+        path: project3
+        skip_stairs:
+          - test-integration
     """)
-    mock_get_changed_files.return_value = {'origin..HEAD', 'project1/README.md', 'project2/README.md'}
+    mock_get_changed_files.return_value = {'project1/README.md', 'project2/README.md', 'project3/README.md'}
     mock_get_git_branch.return_value = 'master'
     steps = pipeline.compile_steps(config)
     pipeline_yml = steps_to_yaml(steps)
