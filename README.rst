@@ -8,6 +8,10 @@ Buildpipe
 .. image:: https://readthedocs.org/projects/buildpipe/badge/?version=latest
     :target: http://buildpipe.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
+    
+.. image:: https://img.shields.io/pypi/v/buildpipe.svg
+    :target: https://pypi.python.org/pypi/buildpipe
+    :alt: PyPI Version
 
 
 Buildpipe allows you to dynamically generate your Buildkite pipelines so that you can:
