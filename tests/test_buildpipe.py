@@ -353,7 +353,9 @@ def test_pipeline_exception():
         pipeline.compile_steps(config)
 
 
-def test_create_pipeline():
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_create_pipeline(mock_get_changed_files):
+    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
     infile = str(pathlib.Path(__file__).parent.parent / 'examples/buildpipe.yml')
     with tempfile.NamedTemporaryFile() as f_out:
         pipeline.create_pipeline(infile, f_out.name)
