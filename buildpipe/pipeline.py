@@ -95,7 +95,7 @@ def generate_project_steps(stair, projects):
     steps = []
     for project in projects:
         step = {
-            'label': f'{stair.name} {project.name} {stair.emoji or project.emoji or ""}',
+            'label': f'{stair.name} {project.name} {stair.emoji or project.emoji or ""}'.strip(),
             'env': {
                 'STAIR_NAME': stair.name,
                 'STAIR_SCOPE': stair.scope,
@@ -113,7 +113,7 @@ def generate_project_steps(stair, projects):
 @buildkite_override
 def generate_stair_steps(stair, projects):
     return [{
-        'label': f'{stair.name} {stair.emoji or ""}',
+        'label': f'{stair.name} {stair.emoji or ""}'.strip(),
         'env': {
             'STAIR_NAME': stair.name,
             'STAIR_SCOPE': stair.scope
@@ -160,6 +160,18 @@ def validate_config(config):
     return True
 
 
+def iter_stair_projects(stair, projects):
+    for project in projects:
+        check_skip_stair = stair.name not in project.skip_stairs
+        if stair.tags:
+            project_tags = project.tags or set([])
+            check_tags = len(set(stair.tags) & set(project_tags)) > 0
+        else:
+            check_tags = True
+        if check_skip_stair and check_tags:
+            yield project
+
+
 def compile_steps(config):
     validate_config(config)
     branch = get_git_branch()
@@ -169,7 +181,7 @@ def compile_steps(config):
 
     steps = []
     for stair in iter_stairs(config.stairs, can_autodeploy):
-        stair_projects = [p for p in projects if stair.name not in p.skip_stairs]
+        stair_projects = list(iter_stair_projects(stair, projects))
         if stair_projects:
             steps += generate_wait_step()
             steps += scope_fn[stair.scope](stair, stair_projects)

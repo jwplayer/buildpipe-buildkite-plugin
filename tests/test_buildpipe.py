@@ -235,6 +235,48 @@ def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
     """).lstrip()
 
 
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_tags(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: test-integration
+        scope: project
+        tags:
+          - integration
+        buildkite:
+          command:
+            - make test-integration
+    projects:
+      - name: project1
+        path: project1
+        tags:
+          - integration
+      - name: project2
+        path: project2
+      - name: project3
+        path: project3
+        skip_stairs:
+          - test-integration
+    """)
+    mock_get_changed_files.return_value = {'project1/README.md', 'project2/README.md', 'project3/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test-integration
+      env:
+        PROJECT_NAME: project1
+        PROJECT_PATH: project1
+        STAIR_NAME: test-integration
+        STAIR_SCOPE: project
+      label: test-integration project1
+    """).lstrip()
+
+
 @freezegun.freeze_time('2013-11-22 08:00:00')
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
@@ -311,7 +353,9 @@ def test_pipeline_exception():
         pipeline.compile_steps(config)
 
 
-def test_create_pipeline():
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_create_pipeline(mock_get_changed_files):
+    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
     infile = str(pathlib.Path(__file__).parent.parent / 'examples/buildpipe.yml')
     with tempfile.NamedTemporaryFile() as f_out:
         pipeline.create_pipeline(infile, f_out.name)
