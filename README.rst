@@ -101,12 +101,12 @@ Example
 The above buildpipe config file specifies the following:
 
 - There are two projects to track in the repo: jsproject and pyproject.
-- A stair is a group of steps. It can have a scope of "project" or "start". Scope "project" creates a step for each project changed while scope "stair" creates only one step.
+- A stair is a group of steps. It can have a scope of "project" or "stair". Scope "project" creates a step for each project changed while scope "stair" creates only one step.
+- You can also limit a stair's scope using tag rules. For example, pyproject has tag "docker-only" and so will include the build step; but jsproject won't have that step.
 - Any git file changes that are subpaths of either project's path will trigger steps for each project.
 - In addition, pyproject has jsproject as a dependency: any changes in jsproject will trigger steps for pyproject to be included in the pipeline. Dependencies are paths.
 - Stairs with "deploy: true" will only happen in master branch between 9am and 5pm ET during weekdays that are not New Year's Eve or Day.
 - Project jsproject will never create step deploy-staging.
-- You can limit a stair's scope using tag rules. For example, pyproject has tag "docker-only" and so will include the build step; but jsproject won't have that step.
 
 In the above config, if only files under `pyproject` were touched and the merge happened during business hours, then buildpipe would create the following steps:
 
