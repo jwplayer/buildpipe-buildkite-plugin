@@ -58,6 +58,7 @@ def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
 
 @pytest.mark.parametrize('test_dt, expected', [
     (datetime.datetime(2013, 11, 22, 8, 0, 0), False),
+    (datetime.datetime(2013, 11, 22, 9, 0, 0), True),
     (datetime.datetime(2013, 11, 22, 18, 0, 0), False),
     (datetime.datetime(2013, 12, 31, 10, 0, 0), False),
     (datetime.datetime(2013, 12, 30, 10, 0, 0), True),
@@ -69,7 +70,7 @@ def test_check_autodeploy(test_dt, expected):
     config = box_from_yaml(io.StringIO("""
     deploy:
       timezone: UTC
-      allowed_hours_regex: '0[9]|1[0-7]'
+      allowed_hours_regex: '9|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
       blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
     """))
@@ -285,7 +286,7 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
     deploy:
       branch: master
       timezone: UTC
-      allowed_hours_regex: '0[9]|1[0-7]'
+      allowed_hours_regex: '9|1[0-7]'
     stairs:
       - name: test
         scope: project

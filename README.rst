@@ -8,7 +8,7 @@ Buildpipe
 .. image:: https://readthedocs.org/projects/buildpipe/badge/?version=latest
     :target: http://buildpipe.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
-    
+
 .. image:: https://img.shields.io/pypi/v/buildpipe.svg
     :target: https://pypi.python.org/pypi/buildpipe
     :alt: PyPI Version
@@ -38,7 +38,7 @@ Example
     deploy:
       branch: master
       timezone: US/Eastern
-      allowed_hours_regex: '0[9]|1[0-7]'
+      allowed_hours_regex: '9|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
       blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
     stairs:
