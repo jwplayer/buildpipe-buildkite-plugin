@@ -171,7 +171,7 @@ In the above config, if only files under `pyproject` were touched and the merge 
           STAIR_SCOPE: project
         label: 'deploy-prod pyproject :shipit:'
 
-Set Up
+Set up
 ------
 
 In the Buildkite pipeline settings UI you just have to add the following in "Commands to run":
