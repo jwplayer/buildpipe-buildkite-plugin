@@ -65,11 +65,10 @@ def get_changed_files(branch, deploy_branch):
     return {line for line in changed if line}
 
 
-def _update(source, overrides):
-    """Update a nested dictionary or similar mapping."""
+def _update_dicts(source, overrides):
     for key, value in overrides.items():
         if isinstance(value, collections.Mapping) and value:
-            returned = _update(source.get(key, {}), value)
+            returned = _update_dicts(source.get(key, {}), value)
             source[key] = returned
         else:
             source[key] = overrides[key]
@@ -79,7 +78,7 @@ def _update(source, overrides):
 def buildkite_override(step_func):
     @functools.wraps(step_func)
     def func_wrapper(stair, projects):
-        return [_update(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
+        return [_update_dicts(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
     return func_wrapper
 
 

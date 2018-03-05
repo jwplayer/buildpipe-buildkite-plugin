@@ -30,8 +30,8 @@ def steps_to_yaml(steps):
     ({'hello': {'value': 'to_override', 'no_change': 1}},  {'hello': {'value': {}}}, {'hello': {'value': {}, 'no_change': 1}}),  # noqa
     ({'hello': {'value': {}, 'no_change': 1}}, {'hello': {'value': 2}}, {'hello': {'value': 2, 'no_change': 1}}),
 ])
-def test_update(source, overrides, expected):
-    pipeline._update(source, overrides)
+def test_update_dicts(source, overrides, expected):
+    pipeline._update_dicts(source, overrides)
     assert source == expected
 
 
