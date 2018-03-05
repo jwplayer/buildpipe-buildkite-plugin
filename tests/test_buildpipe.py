@@ -23,6 +23,18 @@ def steps_to_yaml(steps):
     return steps.to_yaml(Dumper=yaml.dumper.SafeDumper)
 
 
+@pytest.mark.parametrize('source,overrides,expected', [
+    ({'hello1': 1}, {'hello2': 2}, {'hello1': 1, 'hello2': 2}),
+    ({'hello': 'to_override'}, {'hello': 'over'}, {'hello': 'over'}),
+    ({'hello': {'value': 'to_override', 'no_change': 1}}, {'hello': {'value': 'over'}}, {'hello': {'value': 'over', 'no_change': 1}}),  # noqa
+    ({'hello': {'value': 'to_override', 'no_change': 1}},  {'hello': {'value': {}}}, {'hello': {'value': {}, 'no_change': 1}}),  # noqa
+    ({'hello': {'value': {}, 'no_change': 1}}, {'hello': {'value': 2}}, {'hello': {'value': 2, 'no_change': 1}}),
+])
+def test_update(source, overrides, expected):
+    pipeline._update(source, overrides)
+    assert source == expected
+
+
 @pytest.mark.parametrize('changed_files, expected', [
     (['project1/README.md'], {'project1'}),
     (['project2/somedir/README.md'], {'project1', 'project2', 'project4'}),
@@ -122,6 +134,8 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         deploy: true
         buildkite:
           branches: master
+          env:
+            SOME_ENV: "true"
           command:
             - cd $$PROJECT_PATH
             - make deploy-prod
@@ -190,6 +204,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
       env:
         PROJECT_NAME: pyproject
         PROJECT_PATH: pyproject
+        SOME_ENV: 'true'
         STAIR_NAME: deploy-prod
         STAIR_SCOPE: project
       label: 'deploy-prod pyproject :shipit:'

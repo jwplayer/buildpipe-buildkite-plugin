@@ -7,6 +7,7 @@ import pathlib
 import datetime
 import functools
 import subprocess
+import collections
 
 import yaml
 import pytz
@@ -79,10 +80,21 @@ def get_changed_projects(changed_files, projects):
     return {p for p in projects if check_project_affected(changed_files, p)}
 
 
+def _update(source, overrides):
+    """Update a nested dictionary or similar mapping."""
+    for key, value in overrides.items():
+        if isinstance(value, collections.Mapping) and value:
+            returned = _update(source.get(key, {}), value)
+            source[key] = returned
+        else:
+            source[key] = overrides[key]
+    return source
+
+
 def buildkite_override(step_func):
     @functools.wraps(step_func)
     def func_wrapper(stair, projects):
-        return [{**step, **stair.buildkite.to_dict()} for step in step_func(stair, projects)]
+        return [_update(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
     return func_wrapper
 
 
