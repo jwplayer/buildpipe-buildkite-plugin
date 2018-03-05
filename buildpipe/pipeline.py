@@ -7,6 +7,7 @@ import pathlib
 import datetime
 import functools
 import subprocess
+import collections
 
 import yaml
 import pytz
@@ -64,25 +65,20 @@ def get_changed_files(branch, deploy_branch):
     return {line for line in changed if line}
 
 
-def check_project_affected(changed_files, project):
-    for changed_file in changed_files:
-        if project.path == '.' or changed_file.startswith(project.path):
-            return True
-    for dependency in project.get('dependencies', []):
-        for changed_file in changed_files:
-            if changed_file.startswith(dependency):
-                return True
-    return False
-
-
-def get_changed_projects(changed_files, projects):
-    return {p for p in projects if check_project_affected(changed_files, p)}
+def _update_dicts(source, overrides):
+    for key, value in overrides.items():
+        if isinstance(value, collections.Mapping) and value:
+            returned = _update_dicts(source.get(key, {}), value)
+            source[key] = returned
+        else:
+            source[key] = overrides[key]
+    return source
 
 
 def buildkite_override(step_func):
     @functools.wraps(step_func)
     def func_wrapper(stair, projects):
-        return [{**step, **stair.buildkite.to_dict()} for step in step_func(stair, projects)]
+        return [_update_dicts(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
     return func_wrapper
 
 
@@ -121,10 +117,21 @@ def generate_stair_steps(stair, projects):
     }] if projects else []
 
 
+def check_project_affected(changed_files, project):
+    for changed_file in changed_files:
+        if project.path == '.' or changed_file.startswith(project.path):
+            return True
+    for dependency in project.get('dependencies', []):
+        for changed_file in changed_files:
+            if changed_file.startswith(dependency):
+                return True
+    return False
+
+
 def get_affected_projects(branch, config):
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch)
-    return get_changed_projects(changed_files, config.projects)
+    return {p for p in config.projects if check_project_affected(changed_files, p)}
 
 
 def iter_stairs(stairs, can_autodeploy):
