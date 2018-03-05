@@ -65,21 +65,6 @@ def get_changed_files(branch, deploy_branch):
     return {line for line in changed if line}
 
 
-def check_project_affected(changed_files, project):
-    for changed_file in changed_files:
-        if project.path == '.' or changed_file.startswith(project.path):
-            return True
-    for dependency in project.get('dependencies', []):
-        for changed_file in changed_files:
-            if changed_file.startswith(dependency):
-                return True
-    return False
-
-
-def get_changed_projects(changed_files, projects):
-    return {p for p in projects if check_project_affected(changed_files, p)}
-
-
 def _update(source, overrides):
     """Update a nested dictionary or similar mapping."""
     for key, value in overrides.items():
@@ -133,10 +118,21 @@ def generate_stair_steps(stair, projects):
     }] if projects else []
 
 
+def check_project_affected(changed_files, project):
+    for changed_file in changed_files:
+        if project.path == '.' or changed_file.startswith(project.path):
+            return True
+    for dependency in project.get('dependencies', []):
+        for changed_file in changed_files:
+            if changed_file.startswith(dependency):
+                return True
+    return False
+
+
 def get_affected_projects(branch, config):
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch)
-    return get_changed_projects(changed_files, config.projects)
+    return {p for p in config.projects if check_project_affected(changed_files, p)}
 
 
 def iter_stairs(stairs, can_autodeploy):
