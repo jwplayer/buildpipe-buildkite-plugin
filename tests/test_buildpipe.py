@@ -293,6 +293,40 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
     """).lstrip()
 
 
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_probject_substring(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: test
+        scope: project
+        buildkite:
+          command:
+            - make test
+    projects:
+      - name: project
+        path: project
+      - name: project-api
+        path: project-api
+    """)
+    mock_get_changed_files.return_value = {'project-api/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test
+      env:
+        PROJECT_NAME: project-api
+        PROJECT_PATH: project-api
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: test project-api
+    """).lstrip()
+
+
 @freezegun.freeze_time('2013-11-22 08:00:00')
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
