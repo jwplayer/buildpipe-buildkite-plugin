@@ -295,7 +295,7 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
 
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
-def test_probject_substring(mock_get_changed_files, mock_get_git_branch):
+def test_project_substring(mock_get_changed_files, mock_get_git_branch):
     config = box_from_yaml("""
     stairs:
       - name: test
@@ -324,6 +324,41 @@ def test_probject_substring(mock_get_changed_files, mock_get_git_branch):
         STAIR_NAME: test
         STAIR_SCOPE: project
       label: test project-api
+    """).lstrip()
+
+
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_project_env(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: test
+        scope: project
+        buildkite:
+          command:
+            - make test
+    projects:
+      - name: project
+        path: project
+        env:
+          DEPLOYMENT_TYPE: job
+    """)
+    mock_get_changed_files.return_value = {'project/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test
+      env:
+        DEPLOYMENT_TYPE: job
+        PROJECT_NAME: project
+        PROJECT_PATH: project
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: test project
     """).lstrip()
 
 

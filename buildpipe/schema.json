@@ -19,6 +19,10 @@
           "type": "string",
           "description": "Project emoji"
         },
+        "env": {
+          "type": "object",
+          "description": "Environment variables specific to project"
+        },
         "skip_stairs": {
           "type": "array",
           "items": {
