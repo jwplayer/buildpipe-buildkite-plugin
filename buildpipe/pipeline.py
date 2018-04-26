@@ -96,7 +96,8 @@ def generate_project_steps(stair, projects):
                 'STAIR_NAME': stair.name,
                 'STAIR_SCOPE': stair.scope,
                 'PROJECT_NAME': project.name,
-                'PROJECT_PATH': project.path
+                'PROJECT_PATH': project.path,
+                **(project.env or {})
             }
         }
         if stair.deploy:
