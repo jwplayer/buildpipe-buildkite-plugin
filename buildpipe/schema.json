@@ -84,6 +84,13 @@
     }
   },
   "properties": {
+    "ignore": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Paths to ignore when checking changed projects"
+    },
     "deploy": {
       "type": "object",
       "properties": {
