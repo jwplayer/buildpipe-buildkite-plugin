@@ -45,6 +45,7 @@ def test_update_dicts(source, overrides, expected):
     (['project3'], {'project3', 'project4'}),
     (['project3/somedir/app.py'], {'project1', 'project3', 'project4'}),
     (['project3/app.py'], {'project3', 'project4'}),
+    (['nested/path/app.py'], {'project5'}),
     (['app.py'], set()),
 ])
 @mock.patch('buildpipe.pipeline.get_changed_files')
@@ -69,6 +70,8 @@ def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
         dependencies:
           - project2
           - project3
+      - name: project5
+        path: nested/path
     """))
     mock_get_changed_files.return_value = changed_files
     projects = pipeline.get_affected_projects('branch', config)
