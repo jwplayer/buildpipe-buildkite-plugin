@@ -120,7 +120,7 @@ def generate_stair_steps(stair, projects):
 
 
 def check_project_affected(changed_files, project):        
-    for path in [project.path] + project.get('dependencies', []):
+    for path in [project.path] + list(project.get('dependencies', [])):
         for changed_file in changed_files:
             project_dirs = path.split('/')
             changed_dirs = changed_file.split('/')
