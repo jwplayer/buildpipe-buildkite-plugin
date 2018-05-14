@@ -119,14 +119,13 @@ def generate_stair_steps(stair, projects):
     }] if projects else []
 
 
-def check_project_affected(changed_files, project):
-    for changed_file in changed_files:
-        if project.path == '.' or (changed_file.startswith(project.path) 
-                                   and changed_file.split('/')[0] == project.path.split('/')[0]):
-            return True
-    for dependency in project.get('dependencies', []):
+def check_project_affected(changed_files, project):        
+    for path in [project.path] + project.get('dependencies', []):
         for changed_file in changed_files:
-            if changed_file.startswith(dependency):
+            project_dirs = project.path.split('/')
+            changed_dirs = changed_file.split('/')
+
+            if project.path == '.' or changed_dirs[:len(project_dirs)] == project_dirs:
                 return True
     return False
 
