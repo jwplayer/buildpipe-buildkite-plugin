@@ -35,12 +35,17 @@ Example
 .. code-block:: yaml
 
 
+    # trigger deploy steps on master during business hours
     deploy:
       branch: master
       timezone: US/Eastern
       allowed_hours_regex: '9|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
       blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
+    # ignore certain files from triggering steps with fnmatch
+    ignore:
+      - '*.md'
+      - 'pyproject/*.ini'
     stairs:
       - name: test
         scope: project
@@ -104,9 +109,10 @@ The above buildpipe config file specifies the following:
 - A stair is a group of steps. It can have a scope of "project" or "stair". Scope "project" creates a step for each project changed while scope "stair" creates only one step.
 - You can also limit a stair's scope using tag rules. For example, pyproject has tag "docker-only" and so will include the build step; but jsproject won't have that step.
 - Any git file changes that are subpaths of either project's path will trigger steps for each project.
-- In addition, pyproject has jsproject as a dependency: any changes in jsproject will trigger steps for pyproject to be included in the pipeline. Dependencies are paths.
+- In addition, pyproject has path jsproject as a dependency: any changes in jsproject will trigger steps for pyproject to be included in the pipeline. Note dependencies are paths and not projects.
 - Stairs with "deploy: true" will only happen in master branch between 9am and 5pm ET during weekdays that are not New Year's Eve or Day.
 - Project jsproject will never create step deploy-staging.
+- Files ending with .md or .ini files under pyproject will be ignore from triggering deploy steps.
 
 In the above config, if only files under `pyproject` were touched and the merge happened during business hours, then buildpipe would create the following steps:
 

@@ -36,16 +36,23 @@ def test_update_dicts(source, overrides, expected):
 
 
 @pytest.mark.parametrize('changed_files, expected', [
-    (['project1/README.md'], {'project1'}),
-    (['project2/somedir/README.md'], {'project1', 'project2', 'project4'}),
+    (['project1/app.py'], {'project1'}),
+    (['project1/README.md'], set()),
+    (['project1/test/README.md'], set()),
+    (['project1/config.ini'], set()),
+    (['project2/config.ini'], {'project4', 'project2', 'project1'}),
+    (['project2/somedir/app.py'], {'project1', 'project2', 'project4'}),
     (['project3'], {'project3', 'project4'}),
-    (['project3/somedir/README.md'], {'project1', 'project3', 'project4'}),
-    (['project3/README.md'], {'project3', 'project4'}),
-    (['README.md'], set()),
+    (['project3/somedir/app.py'], {'project1', 'project3', 'project4'}),
+    (['project3/app.py'], {'project3', 'project4'}),
+    (['app.py'], set()),
 ])
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
     config = box_from_yaml(io.StringIO("""
+    ignore:
+      - '*.md'
+      - 'project1/*.ini'
     stairs: []
     projects:
       - name: project1

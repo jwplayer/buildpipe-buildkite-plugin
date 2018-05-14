@@ -3,6 +3,7 @@ import re
 import os
 import sys
 import json
+import fnmatch
 import pathlib
 import datetime
 import functools
@@ -132,7 +133,8 @@ def check_project_affected(changed_files, project):
 def get_affected_projects(branch, config):
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch)
-    return {p for p in config.projects if check_project_affected(changed_files, p)}
+    changed_with_ignore = {f for f in changed_files if not any(fnmatch.fnmatch(f, i) for i in config.get('ignore', []))}
+    return {p for p in config.projects if check_project_affected(changed_with_ignore, p)}
 
 
 def iter_stairs(stairs, can_autodeploy):
@@ -146,7 +148,7 @@ def check_autodeploy(deploy):
     now = datetime.datetime.now(pytz.timezone(deploy.get('timezone', 'UTC')))
     check_hours = re.match(deploy.get('allowed_hours_regex', '\d|1\d|2[0-3]'), str(now.hour))
     check_days = re.match(deploy.get('allowed_weekdays_regex', '[1-7]'), str(now.isoweekday()))
-    check_blacklist = not re.match(deploy.get('blacklist_dates_regex', 'A'), now.strftime('%Y-%m-%d'))
+    check_blacklist = not re.match(deploy.get('blacklist_dates_regex', 'dummy'), now.strftime('%Y-%m-%d'))
     return all([check_hours, check_days, check_blacklist])
 
 
