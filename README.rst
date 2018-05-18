@@ -20,7 +20,6 @@ Buildpipe allows you to dynamically generate your Buildkite pipelines so that yo
 - Maintain monorepos by only looking at git changes in specified projects
 - Specify dependencies between projects so that their steps are concurrent
 
-
 Install
 -------
 
@@ -33,6 +32,8 @@ Example
 -------
 
 .. code-block:: yaml
+
+Note: For a complete working example see [buildpipe-monorepo-example](https://github.com/ksindi/buildpipe-monorepo-example).
 
 
     # trigger deploy steps on master during business hours
