@@ -31,7 +31,9 @@ Install
 Example
 -------
 
-Note: For a complete working example see [buildpipe-monorepo-example](https://github.com/ksindi/buildpipe-monorepo-example)
+Note: For a complete working example see `Buildkite Monorepo Example 
+<https://github.com/ksindi/buildpipe-monorepo-example>`_.
+
 
 .. code-block:: yaml
 
