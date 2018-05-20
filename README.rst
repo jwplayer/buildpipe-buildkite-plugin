@@ -31,10 +31,9 @@ Install
 Example
 -------
 
+Note: For a complete working example see [buildpipe-monorepo-example](https://github.com/ksindi/buildpipe-monorepo-example)
+
 .. code-block:: yaml
-
-Note: For a complete working example see [buildpipe-monorepo-example](https://github.com/ksindi/buildpipe-monorepo-example).
-
 
     # trigger deploy steps on master during business hours
     deploy:
