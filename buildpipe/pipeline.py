@@ -9,7 +9,7 @@ import datetime
 import functools
 import subprocess
 import collections
-from typing import Dict, List, Set, Generator, Callable
+from typing import Dict, List, Set, Generator, Callable, NoReturn
 
 import box
 import yaml
@@ -200,7 +200,7 @@ def compile_steps(config: box.Box) -> box.Box:
     return box.Box({'steps': steps})
 
 
-def create_pipeline(infile: str, outfile: str, dry_run: bool = False):
+def create_pipeline(infile: str, outfile: str, dry_run: bool = False) -> NoReturn:
     config = box.Box.from_yaml(filename=infile, **BOX_CONFIG)
     steps = compile_steps(config)
     if not dry_run:
