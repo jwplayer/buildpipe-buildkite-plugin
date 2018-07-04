@@ -9,11 +9,12 @@ import datetime
 import functools
 import subprocess
 import collections
+from typing import Dict, List, Set, Generator, Callable
 
+import box
 import yaml
 import pytz
 import jsonschema
-from box import Box
 
 
 BOX_CONFIG = dict(frozen_box=True, default_box=True)
@@ -23,7 +24,7 @@ class BuildpipeException(Exception):
     pass
 
 
-def get_git_branch():
+def get_git_branch() -> str:
     branch = os.getenv('BUILDKITE_BRANCH')
     if not branch:
         try:
@@ -38,11 +39,11 @@ def get_git_branch():
     return branch
 
 
-def get_deploy_branch(config):
+def get_deploy_branch(config: box.Box) -> str:
     return config.deploy.branch or 'master'
 
 
-def get_changed_files(branch, deploy_branch):
+def get_changed_files(branch: str, deploy_branch: str) -> Set[str]:
     commit = os.getenv('BUILDKITE_COMMIT') or branch
     if branch == deploy_branch:
         command = ['git', 'log', '-m', '-1', '--name-only', '--pretty=format:', commit]
@@ -66,7 +67,7 @@ def get_changed_files(branch, deploy_branch):
     return {line for line in changed if line}
 
 
-def _update_dicts(source, overrides):
+def _update_dicts(source: Dict, overrides: Dict) -> Dict:
     for key, value in overrides.items():
         if isinstance(value, collections.Mapping) and value:
             returned = _update_dicts(source.get(key, {}), value)
@@ -76,19 +77,19 @@ def _update_dicts(source, overrides):
     return source
 
 
-def buildkite_override(step_func):
+def buildkite_override(step_func: Callable):
     @functools.wraps(step_func)
-    def func_wrapper(stair, projects):
+    def func_wrapper(stair: Dict, projects: Set[str]) -> List[Dict]:
         return [_update_dicts(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
     return func_wrapper
 
 
-def generate_wait_step():
+def generate_wait_step() -> List[str]:
     return ['wait']
 
 
 @buildkite_override
-def generate_project_steps(stair, projects):
+def generate_project_steps(stair: Dict, projects: Set) -> List[Dict]:
     steps = []
     for project in projects:
         step = {
@@ -109,7 +110,7 @@ def generate_project_steps(stair, projects):
 
 
 @buildkite_override
-def generate_stair_steps(stair, projects):
+def generate_stair_steps(stair, projects) -> List[Dict]:
     return [{
         'label': f'{stair.name} {stair.emoji or ""}'.strip(),
         'env': {
@@ -119,7 +120,7 @@ def generate_stair_steps(stair, projects):
     }] if projects else []
 
 
-def check_project_affected(changed_files, project):
+def check_project_affected(changed_files: Set[str], project: str) -> bool:
     for path in [project.path] + list(project.get('dependencies', [])):
         for changed_file in changed_files:
             project_dirs = path.split('/')
@@ -130,21 +131,21 @@ def check_project_affected(changed_files, project):
     return False
 
 
-def get_affected_projects(branch, config):
+def get_affected_projects(branch: str, config: box.Box) -> Set[str]:
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch)
     changed_with_ignore = {f for f in changed_files if not any(fnmatch.fnmatch(f, i) for i in config.get('ignore', []))}
     return {p for p in config.projects if check_project_affected(changed_with_ignore, p)}
 
 
-def iter_stairs(stairs, can_autodeploy):
+def iter_stairs(stairs, can_autodeploy: bool) -> Generator[Dict, None, None]:
     for stair in stairs:
         is_deploy = stair.deploy is True
         if not is_deploy or (is_deploy and can_autodeploy):
             yield stair
 
 
-def check_autodeploy(deploy):
+def check_autodeploy(deploy: Dict) -> bool:
     now = datetime.datetime.now(pytz.timezone(deploy.get('timezone', 'UTC')))
     check_hours = re.match(deploy.get('allowed_hours_regex', '\d|1\d|2[0-3]'), str(now.hour))
     check_days = re.match(deploy.get('allowed_weekdays_regex', '[1-7]'), str(now.isoweekday()))
@@ -152,7 +153,7 @@ def check_autodeploy(deploy):
     return all([check_hours, check_days, check_blacklist])
 
 
-def validate_config(config):
+def validate_config(config: box.Box) -> bool:
     schema_path = pathlib.Path(__file__).parent / 'schema.json'
     with schema_path.open() as f_schema:
         schema = json.load(f_schema)
@@ -170,7 +171,7 @@ def validate_config(config):
     return True
 
 
-def iter_stair_projects(stair, projects):
+def iter_stair_projects(stair: Dict, projects: Set[str]) -> Generator[str, None, None]:
     for project in projects:
         check_skip_stair = stair.name not in project.skip_stairs
         if stair.tags:
@@ -182,7 +183,7 @@ def iter_stair_projects(stair, projects):
             yield project
 
 
-def compile_steps(config):
+def compile_steps(config: box.Box) -> box.Box:
     validate_config(config)
     branch = get_git_branch()
     projects = get_affected_projects(branch, config)
@@ -196,11 +197,11 @@ def compile_steps(config):
             steps += generate_wait_step()
             steps += scope_fn[stair.scope](stair, stair_projects)
 
-    return Box({'steps': steps})
+    return box.Box({'steps': steps})
 
 
-def create_pipeline(infile, outfile, dry_run=False):
-    config = Box.from_yaml(filename=infile, **BOX_CONFIG)
+def create_pipeline(infile: str, outfile: str, dry_run: bool = False):
+    config = box.Box.from_yaml(filename=infile, **BOX_CONFIG)
     steps = compile_steps(config)
     if not dry_run:
         steps.to_yaml(filename=outfile, Dumper=yaml.dumper.SafeDumper)
