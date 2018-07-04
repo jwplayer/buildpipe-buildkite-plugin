@@ -77,9 +77,9 @@ def _update_dicts(source: Dict, overrides: Dict) -> Dict:
     return source
 
 
-def buildkite_override(step_func: Callable):
+def buildkite_override(step_func: Callable) -> Callable:
     @functools.wraps(step_func)
-    def func_wrapper(stair: Dict, projects: Set[str]) -> List[Dict]:
+    def func_wrapper(stair: Dict, projects: Set[box.Box]) -> List[Dict]:
         return [_update_dicts(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
     return func_wrapper
 
@@ -89,7 +89,7 @@ def generate_wait_step() -> List[str]:
 
 
 @buildkite_override
-def generate_project_steps(stair: Dict, projects: Set) -> List[Dict]:
+def generate_project_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
     steps = []
     for project in projects:
         step = {
@@ -110,7 +110,7 @@ def generate_project_steps(stair: Dict, projects: Set) -> List[Dict]:
 
 
 @buildkite_override
-def generate_stair_steps(stair, projects) -> List[Dict]:
+def generate_stair_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
     return [{
         'label': f'{stair.name} {stair.emoji or ""}'.strip(),
         'env': {
@@ -120,7 +120,7 @@ def generate_stair_steps(stair, projects) -> List[Dict]:
     }] if projects else []
 
 
-def check_project_affected(changed_files: Set[str], project: str) -> bool:
+def check_project_affected(changed_files: Set[str], project: box.Box) -> bool:
     for path in [project.path] + list(project.get('dependencies', [])):
         for changed_file in changed_files:
             project_dirs = path.split('/')
@@ -131,14 +131,14 @@ def check_project_affected(changed_files: Set[str], project: str) -> bool:
     return False
 
 
-def get_affected_projects(branch: str, config: box.Box) -> Set[str]:
+def get_affected_projects(branch: str, config: box.Box) -> Set[box.Box]:
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch)
     changed_with_ignore = {f for f in changed_files if not any(fnmatch.fnmatch(f, i) for i in config.get('ignore', []))}
     return {p for p in config.projects if check_project_affected(changed_with_ignore, p)}
 
 
-def iter_stairs(stairs, can_autodeploy: bool) -> Generator[Dict, None, None]:
+def iter_stairs(stairs: List[box.Box], can_autodeploy: bool) -> Generator[box.Box, None, None]:
     for stair in stairs:
         is_deploy = stair.deploy is True
         if not is_deploy or (is_deploy and can_autodeploy):
@@ -171,7 +171,7 @@ def validate_config(config: box.Box) -> bool:
     return True
 
 
-def iter_stair_projects(stair: Dict, projects: Set[str]) -> Generator[str, None, None]:
+def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[str, None, None]:
     for project in projects:
         check_skip_stair = stair.name not in project.skip_stairs
         if stair.tags:
