@@ -171,7 +171,7 @@ def validate_config(config: box.Box) -> bool:
     return True
 
 
-def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[str, None, None]:
+def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box.Box, None, None]:
     for project in projects:
         check_skip_stair = stair.name not in project.skip_stairs
         if stair.tags:
