@@ -31,7 +31,7 @@ Install
 Example
 -------
 
-Note: For a complete working example see `Buildkite Monorepo Example 
+Note: For a complete working example see `Buildkite Monorepo Example
 <https://github.com/ksindi/buildpipe-monorepo-example>`_.
 
 
@@ -43,7 +43,9 @@ Note: For a complete working example see `Buildkite Monorepo Example
       timezone: US/Eastern
       allowed_hours_regex: '9|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
-      blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
+      blacklist_dates:
+        - '01-01'
+        - '12-31'
     # ignore certain files from triggering steps with fnmatch
     ignore:
       - '*.md'
@@ -112,7 +114,7 @@ The above buildpipe config file specifies the following:
 - You can also limit a stair's scope using tag rules. For example, pyproject has tag "docker-only" and so will include the build step; but jsproject won't have that step.
 - Any git file changes that are subpaths of either project's path will trigger steps for each project.
 - In addition, pyproject has path jsproject as a dependency: any changes in jsproject will trigger steps for pyproject to be included in the pipeline. Note dependencies are paths and not projects.
-- Stairs with "deploy: true" will only happen in master branch between 9am and 5pm ET during weekdays that are not New Year's Eve or Day.
+- Stairs with "deploy: true" will only trigger in master branch between 9am and 5pm ET during weekdays that are not New Year's Eve or Day.
 - Project jsproject will never create step deploy-staging.
 - Files ending with .md or .ini files under pyproject will be ignore from triggering deploy steps.
 

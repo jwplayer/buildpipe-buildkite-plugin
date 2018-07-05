@@ -149,8 +149,9 @@ def check_autodeploy(deploy: Dict) -> bool:
     now = datetime.datetime.now(pytz.timezone(deploy.get('timezone', 'UTC')))
     check_hours = re.match(deploy.get('allowed_hours_regex', '\d|1\d|2[0-3]'), str(now.hour))
     check_days = re.match(deploy.get('allowed_weekdays_regex', '[1-7]'), str(now.isoweekday()))
-    check_blacklist = not re.match(deploy.get('blacklist_dates_regex', 'dummy'), now.strftime('%Y-%m-%d'))
-    return all([check_hours, check_days, check_blacklist])
+    blacklist_dates = deploy.get('blacklist_dates')
+    check_dates = blacklist_dates is None or now.strftime('%m-%d') not in blacklist_dates
+    return all([check_hours, check_days, check_dates])
 
 
 def validate_config(config: box.Box) -> bool:
