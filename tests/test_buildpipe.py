@@ -94,7 +94,8 @@ def test_check_autodeploy(test_dt, expected):
       timezone: UTC
       allowed_hours_regex: '9|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
-      blacklist_dates_regex: '\d{4}\-(01\-01|12\-31)'
+      blacklist_dates:
+        - '12-31'
     """))
     with freezegun.freeze_time(test_dt):
         assert pipeline.check_autodeploy(config['deploy']) == expected

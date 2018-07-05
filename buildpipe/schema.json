@@ -110,9 +110,9 @@
           "type": "string",
           "description": "ISO weekdays allowed to deploy (Example: 1-5)"
         },
-        "blacklist_dates_regex": {
-          "type": "string",
-          "description": "ISO dates balcklisted from deployment (Example: \\d{4}\\-(01\\-01|12\\-31))"
+        "blacklist_dates": {
+          "type": "array",
+          "description": "Dates balcklisted from deployment in the form of MM-DD"
         }
       },
       "additionalProperties": false
