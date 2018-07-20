@@ -19,6 +19,13 @@
           "type": "string",
           "description": "Project emoji"
         },
+        "block_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Steps that should have block steps before them"
+        },
         "env": {
           "type": "object",
           "description": "Environment variables specific to project"
@@ -128,6 +135,17 @@
       "items": {
         "$ref": "#/definitions/Project"
       }
+    },
+    "block": {
+      "type": "object",
+      "properties": {
+        "block": {
+          "type": "string",
+          "description": "Label of block step"
+        }
+      },
+      "required": ["block"],
+      "description": "Block step format"
     }
   },
   "required": ["stairs", "projects"],

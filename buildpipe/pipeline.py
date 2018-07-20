@@ -79,13 +79,21 @@ def _update_dicts(source: Dict, overrides: Dict) -> Dict:
 
 def buildkite_override(step_func: Callable) -> Callable:
     @functools.wraps(step_func)
-    def func_wrapper(stair: Dict, projects: Set[box.Box]) -> List[Dict]:
+    def func_wrapper(stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
         return [_update_dicts(step, stair.buildkite.to_dict()) for step in step_func(stair, projects)]
     return func_wrapper
 
 
 def generate_wait_step() -> List[str]:
     return ['wait']
+
+
+def generate_block_step(block: Dict, stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
+    steps = []
+    has_block = any(stair.name in project.get('block_steps', []) for project in projects)
+    if has_block:
+        steps.append(block)
+    return steps
 
 
 @buildkite_override
@@ -196,6 +204,7 @@ def compile_steps(config: box.Box) -> box.Box:
         stair_projects = list(iter_stair_projects(stair, projects))
         if stair_projects:
             steps += generate_wait_step()
+            steps += generate_block_step(config.block.to_dict(), stair, stair_projects)
             steps += scope_fn[stair.scope](stair, stair_projects)
 
     return box.Box({'steps': steps})
