@@ -457,6 +457,63 @@ def test_create_pipeline(mock_get_changed_files):
         pipeline.create_pipeline(infile, f_out.name)
 
 
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_block_step(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    deploy:
+      branch: master
+    block:
+      block: "Release!"
+    stairs:
+      - name: test
+        scope: project
+        buildkite:
+          command:
+            - make test
+      - name: deploy
+        scope: project
+        deploy: true
+        buildkite:
+          command:
+            - make deploy
+    projects:
+      - name: myproject
+        path: myproject
+        emoji: ":python:"
+        block_steps:
+          - deploy
+    """)
+    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test
+      env:
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: 'test myproject :python:'
+    - wait
+    - block: Release!
+    - command:
+      - make deploy
+      concurrency: 1
+      concurrency_group: deploy-myproject
+      env:
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: deploy
+        STAIR_SCOPE: project
+      label: 'deploy myproject :python:'
+    """).lstrip()
+
+
 def test_create_parser():
     parser = create_parser()
     command = "--infile file.yml --dry-run"
