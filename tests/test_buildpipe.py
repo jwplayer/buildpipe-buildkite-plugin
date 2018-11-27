@@ -224,7 +224,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
 
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
-def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
+def test_skip(mock_get_changed_files, mock_get_git_branch):
     config = box_from_yaml("""
     stairs:
       - name: test
@@ -241,7 +241,7 @@ def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
       - name: myproject
         path: myproject
         emoji: ":python:"
-        skip_stairs:
+        skip:
           - build
     """)
     mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
@@ -283,7 +283,7 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
         path: project2
       - name: project3
         path: project3
-        skip_stairs:
+        skip:
           - test-integration
     """)
     mock_get_changed_files.return_value = {'project1/README.md', 'project2/README.md', 'project3/README.md'}
@@ -425,26 +425,6 @@ def test_invalidate_config():
             scope: project
             command:
               - make test
-        """)
-        pipeline.compile_steps(config)
-
-
-def test_pipeline_exception():
-    with pytest.raises(pipeline.BuildpipeException):
-        config = box_from_yaml("""
-        deploy: {}
-        stairs:
-          - name: test
-            scope: project
-            buildkite:
-              command:
-                - make test
-        projects:
-          - name: myproject
-            path: myproject
-            emoji: ":python:"
-            skip_stairs:
-              - foo
         """)
         pipeline.compile_steps(config)
 

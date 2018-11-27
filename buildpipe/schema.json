@@ -30,13 +30,6 @@
           "type": "object",
           "description": "Environment variables specific to project"
         },
-        "skip_stairs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Stair names to skip"
-        },
         "dependencies": {
           "type": "array",
           "items": {
@@ -50,6 +43,13 @@
             "type": "string"
           },
           "description": "Filter steps by matching tags"
+        },
+        "skip": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Skip steps with certain tags including step name"
         }
       },
       "required": ["name", "path"],
@@ -84,6 +84,13 @@
             "type": "string"
           },
           "description": "Filter steps by matching tags"
+        },
+        "taints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags that a project needs to activate the step"
         }
       },
       "required": ["name", "scope", "buildkite"],

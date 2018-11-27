@@ -30,7 +30,8 @@ def get_git_branch() -> str:
         try:
             result = subprocess.run(
                 ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-                stdout=subprocess.PIPE, check=True
+                stdout=subprocess.PIPE,
+                check=True
             )
             branch = result.stdout.decode('utf-8').strip()
         except Exception as e:
@@ -61,7 +62,7 @@ def get_changed_files(branch: str, deploy_branch: str) -> Set[str]:
         try:
             first_merge_break = changed.index('')
             changed = changed[0:first_merge_break]
-        except ValueError as e:
+        except ValueError:
             pass
 
     return {line for line in changed if line}
@@ -155,7 +156,7 @@ def iter_stairs(stairs: List[box.Box], can_autodeploy: bool) -> Generator[box.Bo
 
 def check_autodeploy(deploy: Dict) -> bool:
     now = datetime.datetime.now(pytz.timezone(deploy.get('timezone', 'UTC')))
-    check_hours = re.match(deploy.get('allowed_hours_regex', '\d|1\d|2[0-3]'), str(now.hour))
+    check_hours = re.match(deploy.get('allowed_hours_regex', '\\d|1\\d|2[0-3]'), str(now.hour))
     check_days = re.match(deploy.get('allowed_weekdays_regex', '[1-7]'), str(now.isoweekday()))
     blacklist_dates = deploy.get('blacklist_dates')
     check_dates = blacklist_dates is None or now.strftime('%m-%d') not in blacklist_dates
@@ -172,23 +173,36 @@ def validate_config(config: box.Box) -> bool:
     except jsonschema.exceptions.ValidationError as e:
         raise BuildpipeException("Invalid schema") from e
 
-    valid_stair_names = set(stair.name for stair in config.stairs)
-    for project in config.projects:
-        for stair_name in project.skip_stairs:
-            if stair_name not in valid_stair_names:
-                raise BuildpipeException(f'Unrecognized stair {stair_name} for project {project.name}')  # noqa: E501
     return True
 
 
+def get_stair_tags(stair: box.Box):
+    return (set(stair.tags) or set()).add(stair.name)
+
+
 def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box.Box, None, None]:
+    stair_tags = set(stair.tags or set())
+    stair_tags.add(stair.name)  # Add stair name as tag
+    stair_taints = set(stair.taints or set())
+
     for project in projects:
-        check_skip_stair = stair.name not in project.skip_stairs
-        if stair.tags:
-            project_tags = project.tags or set([])
-            check_tags = len(set(stair.tags) & set(project_tags)) > 0
+        project_tags = set(project.tags or set())
+        project_skip = set(project.skip or set())
+
+        # Stairs automatically have one tag which is their name
+        if stair_tags != set([stair.name]):
+            check_tags = len(stair_tags & project_tags) > 0
         else:
             check_tags = True
-        if check_skip_stair and check_tags:
+
+        if len(stair_taints) > 0:
+            check_taints = len(stair_taints & project_tags) > 0
+        else:
+            check_taints = True
+
+        check_skip = len(stair_tags & project_skip) == 0
+
+        if all([check_tags, check_taints, check_skip]) and check_taints:
             yield project
 
 
