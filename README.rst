@@ -55,7 +55,7 @@ Note: For a complete working example see `Buildkite Monorepo Example
         scope: project
         buildkite:
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make test
       - name: build
         scope: project
@@ -82,7 +82,7 @@ Note: For a complete working example see `Buildkite Monorepo Example
         buildkite:
           branches: master
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make deploy-staging
       - name: deploy-prod
         scope: project
@@ -91,7 +91,7 @@ Note: For a complete working example see `Buildkite Monorepo Example
         buildkite:
           branches: master
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make deploy-prod
     projects:
       - name: pyproject
@@ -125,60 +125,60 @@ In the above config, if only files under `pyproject` were touched and the merge 
     steps:
       - wait
       - command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make test
         env:
-          PROJECT_NAME: pyproject
-          PROJECT_PATH: pyproject
-          STAIR_NAME: test
-          STAIR_SCOPE: project
+          BUILDPIPE_PROJECT_NAME: pyproject
+          BUILDPIPE_PROJECT_PATH: pyproject
+          BUILDPIPE_STAIR_NAME: test
+          BUILDPIPE_STAIR_SCOPE: project
         label: 'test pyproject :python:'
       - wait
       - agents:
         - queue=build
         branches: master
         command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make build
         - make publish-image
         env:
-          PROJECT_NAME: pyproject
-          PROJECT_PATH: pyproject
-          STAIR_NAME: build
-          STAIR_SCOPE: project
+          BUILDPIPE_PROJECT_NAME: pyproject
+          BUILDPIPE_PROJECT_PATH: pyproject
+          BUILDPIPE_STAIR_NAME: build
+          BUILDPIPE_STAIR_SCOPE: project
         label: 'build pyproject :docker:'
       - wait
       - branches: master
         command: make tag
         env:
-          STAIR_NAME: tag
-          STAIR_SCOPE: stair
+          BUILDPIPE_STAIR_NAME: tag
+          BUILDPIPE_STAIR_SCOPE: stair
         label: 'tag :github:'
       - wait
       - branches: master
         command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make deploy-staging
         concurrency: 1
         concurrency_group: deploy-staging-pyproject
         env:
-          PROJECT_NAME: pyproject
-          PROJECT_PATH: pyproject
-          STAIR_NAME: deploy-staging
-          STAIR_SCOPE: project
+          BUILDPIPE_PROJECT_NAME: pyproject
+          BUILDPIPE_PROJECT_PATH: pyproject
+          BUILDPIPE_STAIR_NAME: deploy-staging
+          BUILDPIPE_STAIR_SCOPE: project
         label: 'deploy-staging pyproject :shipit:'
       - wait
       - branches: master
         command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make deploy-prod
         concurrency: 1
         concurrency_group: deploy-prod-pyproject
         env:
-          PROJECT_NAME: pyproject
-          PROJECT_PATH: pyproject
-          STAIR_NAME: deploy-prod
-          STAIR_SCOPE: project
+          BUILDPIPE_PROJECT_NAME: pyproject
+          BUILDPIPE_PROJECT_PATH: pyproject
+          BUILDPIPE_STAIR_NAME: deploy-prod
+          BUILDPIPE_STAIR_SCOPE: project
         label: 'deploy-prod pyproject :shipit:'
 
 Set up

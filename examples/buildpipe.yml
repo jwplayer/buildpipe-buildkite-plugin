@@ -11,7 +11,7 @@ stairs:
     scope: project
     buildkite:
       command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make test
   - name: build
     scope: project
@@ -19,7 +19,7 @@ stairs:
     buildkite:
       branches: "master"
       command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make build
         - make publish-image
       agents:
@@ -38,7 +38,7 @@ stairs:
     buildkite:
       branches: "master"
       command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make deploy-staging
   - name: deploy-prod
     scope: project
@@ -47,7 +47,7 @@ stairs:
     buildkite:
       branches: "master"
       command:
-        - cd $$PROJECT_PATH
+        - cd $$BUILDPIPE_PROJECT_PATH
         - make deploy-prod
 projects:
   - name: jsproject
