@@ -61,7 +61,7 @@ def get_changed_files(branch: str, deploy_branch: str) -> Set[str]:
         try:
             first_merge_break = changed.index('')
             changed = changed[0:first_merge_break]
-        except ValueError as e:
+        except ValueError:
             pass
 
     return {line for line in changed if line}
@@ -155,7 +155,7 @@ def iter_stairs(stairs: List[box.Box], can_autodeploy: bool) -> Generator[box.Bo
 
 def check_autodeploy(deploy: Dict) -> bool:
     now = datetime.datetime.now(pytz.timezone(deploy.get('timezone', 'UTC')))
-    check_hours = re.match(deploy.get('allowed_hours_regex', '\d|1\d|2[0-3]'), str(now.hour))
+    check_hours = re.match(deploy.get('allowed_hours_regex', '\\d|1\\d|2[0-3]'), str(now.hour))
     check_days = re.match(deploy.get('allowed_weekdays_regex', '[1-7]'), str(now.isoweekday()))
     blacklist_dates = deploy.get('blacklist_dates')
     check_dates = blacklist_dates is None or now.strftime('%m-%d') not in blacklist_dates
