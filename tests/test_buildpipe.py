@@ -111,7 +111,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         scope: project
         buildkite:
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make test
       - name: build
         scope: project
@@ -121,7 +121,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
             - queue=build
           branches: master
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make build
             - make publish-image
       - name: tag
@@ -137,7 +137,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         buildkite:
           branches: master
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make deploy-staging
       - name: deploy-prod
         scope: project
@@ -148,7 +148,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
           env:
             SOME_ENV: "true"
           command:
-            - cd $$PROJECT_PATH
+            - cd $$BUILDPIPE_PROJECT_PATH
             - make deploy-prod
     projects:
       - name: pyproject
@@ -163,61 +163,61 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
     steps:
     - wait
     - command:
-      - cd $$PROJECT_PATH
+      - cd $$BUILDPIPE_PROJECT_PATH
       - make test
       env:
-        PROJECT_NAME: pyproject
-        PROJECT_PATH: pyproject
-        STAIR_NAME: test
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: pyproject
+        BUILDPIPE_PROJECT_PATH: pyproject
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'test pyproject :python:'
     - wait
     - agents:
       - queue=build
       branches: master
       command:
-      - cd $$PROJECT_PATH
+      - cd $$BUILDPIPE_PROJECT_PATH
       - make build
       - make publish-image
       env:
-        PROJECT_NAME: pyproject
-        PROJECT_PATH: pyproject
-        STAIR_NAME: build
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: pyproject
+        BUILDPIPE_PROJECT_PATH: pyproject
+        BUILDPIPE_STAIR_NAME: build
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'build pyproject :docker:'
     - wait
     - branches: master
       command: make tag
       env:
-        STAIR_NAME: tag
-        STAIR_SCOPE: stair
+        BUILDPIPE_STAIR_NAME: tag
+        BUILDPIPE_STAIR_SCOPE: stair
       label: 'tag :github:'
     - wait
     - branches: master
       command:
-      - cd $$PROJECT_PATH
+      - cd $$BUILDPIPE_PROJECT_PATH
       - make deploy-staging
       concurrency: 1
       concurrency_group: deploy-staging-pyproject
       env:
-        PROJECT_NAME: pyproject
-        PROJECT_PATH: pyproject
-        STAIR_NAME: deploy-staging
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: pyproject
+        BUILDPIPE_PROJECT_PATH: pyproject
+        BUILDPIPE_STAIR_NAME: deploy-staging
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'deploy-staging pyproject :shipit:'
     - wait
     - branches: master
       command:
-      - cd $$PROJECT_PATH
+      - cd $$BUILDPIPE_PROJECT_PATH
       - make deploy-prod
       concurrency: 1
       concurrency_group: deploy-prod-pyproject
       env:
-        PROJECT_NAME: pyproject
-        PROJECT_PATH: pyproject
+        BUILDPIPE_PROJECT_NAME: pyproject
+        BUILDPIPE_PROJECT_PATH: pyproject
+        BUILDPIPE_STAIR_NAME: deploy-prod
+        BUILDPIPE_STAIR_SCOPE: project
         SOME_ENV: 'true'
-        STAIR_NAME: deploy-prod
-        STAIR_SCOPE: project
       label: 'deploy-prod pyproject :shipit:'
     """).lstrip()
 
@@ -254,10 +254,10 @@ def test_skip(mock_get_changed_files, mock_get_git_branch):
     - command:
       - make test
       env:
-        PROJECT_NAME: myproject
-        PROJECT_PATH: myproject
-        STAIR_NAME: test
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: myproject
+        BUILDPIPE_PROJECT_PATH: myproject
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'test myproject :python:'
     """).lstrip()
 
@@ -296,10 +296,10 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
     - command:
       - make test-integration
       env:
-        PROJECT_NAME: project1
-        PROJECT_PATH: project1
-        STAIR_NAME: test-integration
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: project1
+        BUILDPIPE_PROJECT_PATH: project1
+        BUILDPIPE_STAIR_NAME: test-integration
+        BUILDPIPE_STAIR_SCOPE: project
       label: test-integration project1
     """).lstrip()
 
@@ -330,10 +330,10 @@ def test_project_substring(mock_get_changed_files, mock_get_git_branch):
     - command:
       - make test
       env:
-        PROJECT_NAME: project-api
-        PROJECT_PATH: project-api
-        STAIR_NAME: test
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: project-api
+        BUILDPIPE_PROJECT_PATH: project-api
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
       label: test project-api
     """).lstrip()
 
@@ -364,11 +364,11 @@ def test_project_env(mock_get_changed_files, mock_get_git_branch):
     - command:
       - make test
       env:
+        BUILDPIPE_PROJECT_NAME: project
+        BUILDPIPE_PROJECT_PATH: project
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
         DEPLOYMENT_TYPE: job
-        PROJECT_NAME: project
-        PROJECT_PATH: project
-        STAIR_NAME: test
-        STAIR_SCOPE: project
       label: test project
     """).lstrip()
 
@@ -409,10 +409,10 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
     - command:
       - make test
       env:
-        PROJECT_NAME: myproject
-        PROJECT_PATH: myproject
-        STAIR_NAME: test
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: myproject
+        BUILDPIPE_PROJECT_PATH: myproject
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'test myproject :python:'
     """).lstrip()
 
@@ -474,10 +474,10 @@ def test_block_step(mock_get_changed_files, mock_get_git_branch):
     - command:
       - make test
       env:
-        PROJECT_NAME: myproject
-        PROJECT_PATH: myproject
-        STAIR_NAME: test
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: myproject
+        BUILDPIPE_PROJECT_PATH: myproject
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'test myproject :python:'
     - wait
     - block: Release!
@@ -486,10 +486,10 @@ def test_block_step(mock_get_changed_files, mock_get_git_branch):
       concurrency: 1
       concurrency_group: deploy-myproject
       env:
-        PROJECT_NAME: myproject
-        PROJECT_PATH: myproject
-        STAIR_NAME: deploy
-        STAIR_SCOPE: project
+        BUILDPIPE_PROJECT_NAME: myproject
+        BUILDPIPE_PROJECT_PATH: myproject
+        BUILDPIPE_STAIR_NAME: deploy
+        BUILDPIPE_STAIR_SCOPE: project
       label: 'deploy myproject :python:'
     """).lstrip()
 

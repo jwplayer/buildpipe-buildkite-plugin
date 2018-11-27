@@ -104,10 +104,10 @@ def generate_project_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]
         step = {
             'label': f'{stair.name} {project.name} {stair.emoji or project.emoji or ""}'.strip(),
             'env': {
-                'STAIR_NAME': stair.name,
-                'STAIR_SCOPE': stair.scope,
-                'PROJECT_NAME': project.name,
-                'PROJECT_PATH': project.path,
+                'BUILDPIPE_STAIR_NAME': stair.name,
+                'BUILDPIPE_STAIR_SCOPE': stair.scope,
+                'BUILDPIPE_PROJECT_NAME': project.name,
+                'BUILDPIPE_PROJECT_PATH': project.path,
                 **(project.env or {})
             }
         }
@@ -123,8 +123,8 @@ def generate_stair_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
     return [{
         'label': f'{stair.name} {stair.emoji or ""}'.strip(),
         'env': {
-            'STAIR_NAME': stair.name,
-            'STAIR_SCOPE': stair.scope
+            'BUILDPIPE_STAIR_NAME': stair.name,
+            'BUILDPIPE_STAIR_SCOPE': stair.scope
         }
     }] if projects else []
 
