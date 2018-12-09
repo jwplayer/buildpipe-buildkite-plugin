@@ -53,7 +53,7 @@ projects:
   - name: jsproject
     path: jsproject
     emoji: ":javascript:"
-    skip_stairs:
+    skip:
       - deploy-prod
   - name: pyproject
     path: pyproject

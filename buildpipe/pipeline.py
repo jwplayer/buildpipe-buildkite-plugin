@@ -9,12 +9,14 @@ import datetime
 import functools
 import subprocess
 import collections
-from typing import Dict, List, Set, Generator, Callable, NoReturn
+from typing import Dict, List, Set, Generator, Callable, NoReturn, Union
 
 import box
 import yaml
 import pytz
 import jsonschema
+
+TAGS = List[Union[str, List[str]]]
 
 
 BOX_CONFIG = dict(frozen_box=True, default_box=True)
@@ -89,11 +91,8 @@ def generate_wait_step() -> List[str]:
 
 
 def generate_block_step(block: Dict, stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
-    steps = []
-    has_block = any(stair.name in project.get('block_steps', []) for project in projects)
-    if has_block:
-        steps.append(block)
-    return steps
+    has_block = any(stair.name in project.get('block_stairs', []) for project in projects)
+    return [block] if has_block else []
 
 
 @buildkite_override
@@ -172,23 +171,29 @@ def validate_config(config: box.Box) -> bool:
     except jsonschema.exceptions.ValidationError as e:
         raise BuildpipeException("Invalid schema") from e
 
-    valid_stair_names = set(stair.name for stair in config.stairs)
-    for project in config.projects:
-        for stair_name in project.skip_stairs:
-            if stair_name not in valid_stair_names:
-                raise BuildpipeException(f'Unrecognized stair {stair_name} for project {project.name}')  # noqa: E501
+    return True
+
+
+def check_tag_rules(stair_tags: TAGS, project_tags: TAGS, project_skip_tags: TAGS) -> bool:
+    for stair_tag in stair_tags:
+        if stair_tag in project_skip_tags:
+            return False
+        for project_tag in project_tags:
+            if project_tag in stair_tags:
+                return True
+        else:
+            # Stair has tags but project does not have a matching tag
+            return False
     return True
 
 
 def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box.Box, None, None]:
+    stair_tags = stair.tags or []
     for project in projects:
-        check_skip_stair = stair.name not in project.skip_stairs
-        if stair.tags:
-            project_tags = project.tags or set([])
-            check_tags = len(set(stair.tags) & set(project_tags)) > 0
-        else:
-            check_tags = True
-        if check_skip_stair and check_tags:
+        project_tags = project.tags or []
+        project_skip_tags = project.skip or []
+        check_stair_name = stair.name not in project_skip_tags
+        if check_stair_name and check_tag_rules(stair_tags, project_tags, project_skip_tags):
             yield project
 
 

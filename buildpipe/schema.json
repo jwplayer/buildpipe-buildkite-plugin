@@ -4,6 +4,21 @@
   "description": "buildpipe schema",
   "type": "object",
   "definitions": {
+    "StringGroup": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {"type": "string"},
+          {
+          "type": "array",
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          }
+        }]
+      }
+    },
     "Project": {
       "type": "object",
       "properties": {
@@ -19,23 +34,20 @@
           "type": "string",
           "description": "Project emoji"
         },
-        "block_steps": {
+        "block_stairs": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "Steps that should have block steps before them"
+          "description": "Stairs that should have a block step before them"
         },
         "env": {
           "type": "object",
           "description": "Environment variables specific to project"
         },
-        "skip_stairs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Stair names to skip"
+        "skip": {
+          "$ref": "#/definitions/StringGroup",
+          "description": "Stair name or tag groups to skip"
         },
         "dependencies": {
           "type": "array",
@@ -45,10 +57,7 @@
           "description": "Paths to include in dependencies"
         },
         "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "$ref": "#/definitions/StringGroup",
           "description": "Filter steps by matching tags"
         }
       },
@@ -79,10 +88,7 @@
           "description": "Buildkite step details"
         },
         "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "$ref": "#/definitions/StringGroup",
           "description": "Filter steps by matching tags"
         }
       },
