@@ -110,9 +110,6 @@ def generate_project_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]
                 **(project.env or {})
             }
         }
-        if stair.deploy:
-            step['concurrency'] = 1
-            step['concurrency_group'] = f'{stair.name}-{project.name}'
         steps.append(step)
     return steps
 
@@ -146,10 +143,13 @@ def get_affected_projects(branch: str, config: box.Box) -> Set[box.Box]:
     return {p for p in config.projects if check_project_affected(changed_with_ignore, p)}
 
 
-def iter_stairs(stairs: List[box.Box], can_autodeploy: bool) -> Generator[box.Box, None, None]:
-    for stair in stairs:
-        is_deploy = stair.deploy is True
-        if not is_deploy or (is_deploy and can_autodeploy):
+def iter_stairs(config: box.Box) -> Generator[box.Box, None, None]:
+    deploy_dict = config.deploy.to_dict()
+    deploy_stairs = deploy_dict.get('stairs', [])
+    can_autodeploy = check_autodeploy(deploy_dict)
+    for stair in config.stairs:
+        is_deployable = stair.name in deploy_stairs
+        if not is_deployable or (is_deployable and can_autodeploy):
             yield stair
 
 
@@ -196,11 +196,10 @@ def compile_steps(config: box.Box) -> box.Box:
     validate_config(config)
     branch = get_git_branch()
     projects = get_affected_projects(branch, config)
-    can_autodeploy = check_autodeploy(config.deploy.to_dict())
     scope_fn = dict(project=generate_project_steps, stair=generate_stair_steps)
 
     steps = []
-    for stair in iter_stairs(config.stairs, can_autodeploy):
+    for stair in iter_stairs(config):
         stair_projects = list(iter_stair_projects(stair, projects))
         if stair_projects:
             steps += generate_wait_step()

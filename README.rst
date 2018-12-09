@@ -40,6 +40,9 @@ Note: For a complete working example see `Buildkite Monorepo Example
     # trigger deploy steps on master during business hours
     deploy:
       branch: master
+      stairs:
+        - deploy-staging
+        - deploy-prod
       timezone: US/Eastern
       allowed_hours_regex: '9|1[0-7]'
       allowed_weekdays_regex: '[1-5]'
@@ -78,7 +81,6 @@ Note: For a complete working example see `Buildkite Monorepo Example
       - name: deploy-staging
         scope: project
         emoji: ":shipit:"
-        deploy: true
         buildkite:
           branches: master
           command:
@@ -87,7 +89,6 @@ Note: For a complete working example see `Buildkite Monorepo Example
       - name: deploy-prod
         scope: project
         emoji: ":shipit:"
-        deploy: true
         buildkite:
           branches: master
           command:

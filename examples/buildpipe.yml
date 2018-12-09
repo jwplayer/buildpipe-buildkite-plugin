@@ -1,5 +1,8 @@
 deploy:
   branch: master
+  stairs:
+    - deploy-staging
+    - deploy-prod
   timezone: US/Eastern
   allowed_hours_regex: '9|1[0-7]'
   allowed_weekdays_regex: '[1-5]'
@@ -34,7 +37,6 @@ stairs:
   - name: deploy-staging
     scope: project
     emoji: ":shipit:"
-    deploy: true
     buildkite:
       branches: "master"
       command:
@@ -43,7 +45,6 @@ stairs:
   - name: deploy-prod
     scope: project
     emoji: ":shipit:"
-    deploy: true
     buildkite:
       branches: "master"
       command:

@@ -133,7 +133,6 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
       - name: deploy-staging
         scope: project
         emoji: ":shipit:"
-        deploy: true
         buildkite:
           branches: master
           command:
@@ -142,7 +141,6 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
       - name: deploy-prod
         scope: project
         emoji: ":shipit:"
-        deploy: true
         buildkite:
           branches: master
           env:
@@ -380,6 +378,8 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
     config = box_from_yaml("""
     deploy:
       branch: master
+      stairs:
+        - deploy
       timezone: UTC
       allowed_hours_regex: '9|1[0-7]'
     stairs:
@@ -390,7 +390,6 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
             - make test
       - name: deploy
         scope: project
-        deploy: true
         buildkite:
           command:
             - make deploy
@@ -463,6 +462,8 @@ def test_block_step(mock_get_changed_files, mock_get_git_branch):
     config = box_from_yaml("""
     deploy:
       branch: master
+      stairs:
+        - deploy
     block:
       block: "Release!"
     stairs:
@@ -473,7 +474,6 @@ def test_block_step(mock_get_changed_files, mock_get_git_branch):
             - make test
       - name: deploy
         scope: project
-        deploy: true
         buildkite:
           command:
             - make deploy
