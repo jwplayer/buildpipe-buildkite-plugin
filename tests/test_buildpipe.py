@@ -23,6 +23,34 @@ def steps_to_yaml(steps):
     return steps.to_yaml(Dumper=yaml.dumper.SafeDumper)
 
 
+@pytest.mark.parametrize('stair_tags,project_tags,project_skip_tags,expected', [
+    # No stair tags should default to true
+    ([], [], [], True),
+    ([], [], ['foo'], True),
+    ([], ['foo'], [], True),
+    # Nonsensical but should work
+    ([], ['foo'], ['foo'], True),
+    # Matching tags
+    (['foo'], ['foo'], [], True),
+    # Non-matching tags
+    (['foo'], ['baz'], [], False),
+    # Matching tag skips
+    (['foo'], [], ['foo'], False),
+    # Skips take priority
+    (['foo'], ['foo'], ['foo'], False),
+    # Matching tags using tag groups
+    ([['foo', 'bar'], 'baz'], [['foo', 'bar']], [], True),
+    # Matching skips using tag groups
+    ([['foo', 'bar'], 'baz'], [], [['foo', 'bar']], False),
+    # Non-matching tag groups despite some matching
+    ([['foo', 'bar']], ['bar'], [], False),
+    # Non-matching tag skips despite some matching
+    ([['foo', 'bar']], [['foo', 'bar']], ['bar'], True),
+])
+def test_check_tag_rules(stair_tags, project_tags, project_skip_tags, expected):
+    assert pipeline.check_tag_rules(stair_tags, project_tags, project_skip_tags) == expected
+
+
 @pytest.mark.parametrize('source,overrides,expected', [
     ({'hello1': 1}, {'hello2': 2}, {'hello1': 1, 'hello2': 2}),
     ({'hello': 'to_override'}, {'hello': 'over'}, {'hello': 'over'}),
@@ -224,7 +252,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
 
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
-def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
+def test_skip(mock_get_changed_files, mock_get_git_branch):
     config = box_from_yaml("""
     stairs:
       - name: test
@@ -241,7 +269,7 @@ def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
       - name: myproject
         path: myproject
         emoji: ":python:"
-        skip_stairs:
+        skip:
           - build
     """)
     mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
@@ -283,7 +311,7 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
         path: project2
       - name: project3
         path: project3
-        skip_stairs:
+        skip:
           - test-integration
     """)
     mock_get_changed_files.return_value = {'project1/README.md', 'project2/README.md', 'project3/README.md'}
@@ -301,6 +329,49 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_STAIR_NAME: test-integration
         BUILDPIPE_STAIR_SCOPE: project
       label: test-integration project1
+    """).lstrip()
+
+
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_tag_groups(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: step1
+        scope: project
+        tags:
+          - foo
+          - ["bar", "baz"]
+        buildkite:
+          command:
+            - make step1
+    projects:
+      - name: project1
+        path: project1
+        tags:
+          - ["bar", "baz"]
+      - name: project2
+        path: project2
+      - name: project3
+        path: project3
+        skip:
+          - ["bar", "baz"]
+    """)
+    mock_get_changed_files.return_value = {'project1/README.md', 'project2/README.md', 'project3/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make step1
+      env:
+        BUILDPIPE_PROJECT_NAME: project1
+        BUILDPIPE_PROJECT_PATH: project1
+        BUILDPIPE_STAIR_NAME: step1
+        BUILDPIPE_STAIR_SCOPE: project
+      label: step1 project1
     """).lstrip()
 
 
@@ -429,26 +500,6 @@ def test_invalidate_config():
         pipeline.compile_steps(config)
 
 
-def test_pipeline_exception():
-    with pytest.raises(pipeline.BuildpipeException):
-        config = box_from_yaml("""
-        deploy: {}
-        stairs:
-          - name: test
-            scope: project
-            buildkite:
-              command:
-                - make test
-        projects:
-          - name: myproject
-            path: myproject
-            emoji: ":python:"
-            skip_stairs:
-              - foo
-        """)
-        pipeline.compile_steps(config)
-
-
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_create_pipeline(mock_get_changed_files):
     mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
@@ -459,7 +510,7 @@ def test_create_pipeline(mock_get_changed_files):
 
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
-def test_block_step(mock_get_changed_files, mock_get_git_branch):
+def test_block_stairs(mock_get_changed_files, mock_get_git_branch):
     config = box_from_yaml("""
     deploy:
       branch: master
@@ -481,7 +532,7 @@ def test_block_step(mock_get_changed_files, mock_get_git_branch):
       - name: myproject
         path: myproject
         emoji: ":python:"
-        block_steps:
+        block_stairs:
           - deploy
     """)
     mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}

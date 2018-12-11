@@ -104,7 +104,7 @@ Note: For a complete working example see `Buildkite Monorepo Example
       - name: jsproject
         path: jsproject
         emoji: ":javascript:"
-        skip_stairs:
+        skip:
           - deploy-staging
 
 The above buildpipe config file specifies the following:
