@@ -9,14 +9,14 @@ import datetime
 import functools
 import subprocess
 import collections
-from typing import Dict, List, Set, Generator, Callable, NoReturn, Union
+from typing import Dict, List, Tuple, Set, Generator, Callable, NoReturn, Union
 
 import box
 import yaml
 import pytz
 import jsonschema
 
-TAGS = List[Union[str, List[str]]]
+TAGS = List[Union[str, Tuple[str]]]
 
 
 BOX_CONFIG = dict(frozen_box=True, default_box=True)
@@ -24,6 +24,23 @@ BOX_CONFIG = dict(frozen_box=True, default_box=True)
 
 class BuildpipeException(Exception):
     pass
+
+
+def _listify(arg: Union[None, str, List[str], Tuple[Tuple[str]]]) -> List[str]:
+    """Return a list of strings or tuples where argument can also be a string"""
+    if arg is None or len(arg) == 0:
+        return []
+    elif isinstance(arg, str):
+        return [arg]
+    elif (isinstance(arg, list) or isinstance(arg, tuple)):
+        return list(arg)
+    else:
+        raise ValueError(f"Argument is neither None, string nor list. Found {arg}")
+
+
+def _get_block(project: box.Box):
+    # TODO: deprecate and remove block_steps
+    return _listify(project.block_stairs) + _listify(project.block_steps)
 
 
 def get_git_branch() -> str:
@@ -91,7 +108,7 @@ def generate_wait_step() -> List[str]:
 
 
 def generate_block_step(block: Dict, stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
-    has_block = any(stair.name in project.get('block_stairs', []) for project in projects)
+    has_block = any(stair.name in _get_block(project) for project in projects)
     return [block] if has_block else []
 
 
@@ -106,6 +123,12 @@ def generate_project_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]
                 'BUILDPIPE_STAIR_SCOPE': stair.scope,
                 'BUILDPIPE_PROJECT_NAME': project.name,
                 'BUILDPIPE_PROJECT_PATH': project.path,
+                # Deprecated environment variable names
+                'STAIR_NAME': stair.name,
+                'STAIR_SCOPE': stair.scope,
+                'PROJECT_NAME': project.name,
+                'PROJECT_PATH': project.path,
+                # Add other environment variables specific to project
                 **(project.env or {})
             }
         }
@@ -175,23 +198,22 @@ def validate_config(config: box.Box) -> bool:
 
 
 def check_tag_rules(stair_tags: TAGS, project_tags: TAGS, project_skip_tags: TAGS) -> bool:
+    project_tag_set = set(_listify(project_tags))
+    project_skip_tags_set = set(_listify(project_skip_tags))
     for stair_tag in stair_tags:
-        if stair_tag in project_skip_tags:
+        stair_tag_set = set(_listify(stair_tag))
+        if len(stair_tag_set & project_skip_tags_set) > 0:
             return False
-        for project_tag in project_tags:
-            if project_tag in stair_tags:
-                return True
         else:
-            # Stair has tags but project does not have a matching tag
-            return False
+            return (stair_tag_set & project_tag_set) == stair_tag_set
     return True
 
 
 def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box.Box, None, None]:
     stair_tags = stair.tags or []
     for project in projects:
-        project_tags = project.tags or []
-        project_skip_tags = project.skip or []
+        project_tags = _listify(project.tags)
+        project_skip_tags = _listify(project.skip) + _listify(project.skip_stairs)
         check_stair_name = stair.name not in project_skip_tags
         if check_stair_name and check_tag_rules(stair_tags, project_tags, project_skip_tags):
             yield project

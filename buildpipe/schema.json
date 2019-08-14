@@ -41,6 +41,13 @@
           },
           "description": "Stairs that should have a block step before them"
         },
+        "block_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "(Deprecated) Stairs that should have a block step before them"
+        },
         "env": {
           "type": "object",
           "description": "Environment variables specific to project"
@@ -48,6 +55,10 @@
         "skip": {
           "$ref": "#/definitions/StringGroup",
           "description": "Stair name or tag groups to skip"
+        },
+        "skip_stairs": {
+          "$ref": "#/definitions/StringGroup",
+          "description": "(Deprecated) Stair name to skip"
         },
         "dependencies": {
           "type": "array",
