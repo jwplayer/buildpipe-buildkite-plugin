@@ -26,7 +26,7 @@ class BuildpipeException(Exception):
     pass
 
 
-def _listify(arg: Union[None, str, List[str], Tuple[Tuple[str]]]) -> List[str]:
+def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[str]:
     """Return a list of strings or tuples where argument can also be a string"""
     if arg is None or len(arg) == 0:
         return []
@@ -198,15 +198,22 @@ def validate_config(config: box.Box) -> bool:
 
 
 def check_tag_rules(stair_tags: TAGS, project_tags: TAGS, project_skip_tags: TAGS) -> bool:
-    project_tag_set = set(_listify(project_tags))
+    project_tags_set = set(_listify(project_tags))
     project_skip_tags_set = set(_listify(project_skip_tags))
+
+    # Stairs that don't have tags allow any project
+    if len(stair_tags) == 0:
+        return True
+
     for stair_tag in stair_tags:
-        stair_tag_set = set(_listify(stair_tag))
+        stair_tag_set = set(list(_listify(stair_tag)))
         if len(stair_tag_set & project_skip_tags_set) > 0:
             return False
         else:
-            return (stair_tag_set & project_tag_set) == stair_tag_set
-    return True
+            if (stair_tag_set & project_tags_set) == stair_tag_set:
+                return True
+
+    return False
 
 
 def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box.Box, None, None]:

@@ -39,13 +39,15 @@ def steps_to_yaml(steps):
     # Skips take priority
     (['foo'], ['foo'], ['foo'], False),
     # Matching tags using tag groups
-    ([['foo', 'bar'], 'baz'], [['foo', 'bar']], [], True),
+    ([('foo', 'bar'), 'baz'], ['foo', 'bar'], [], True),
     # Matching skips using tag groups
-    ([['foo', 'bar'], 'baz'], [], [['foo', 'bar']], False),
+    ([('foo', 'bar'), 'baz'], [], [('foo', 'bar')], False),
     # Non-matching tag groups despite some matching
-    ([['foo', 'bar']], ['bar'], [], False),
+    ([('foo', 'bar')], ['bar'], [], False),
     # Non-matching tag skips despite some matching
-    ([['foo', 'bar']], [['foo', 'bar']], ['bar'], True),
+    ([('foo', 'bar')], ['foo', 'bar'], [], True),
+    ([('foo', 'bar')], ['foo'], [], False),
+    ([('foo', 'bar')], ['bar'], [], False),
 ])
 def test_check_tag_rules(stair_tags, project_tags, project_skip_tags, expected):
     assert pipeline.check_tag_rules(stair_tags, project_tags, project_skip_tags) == expected
