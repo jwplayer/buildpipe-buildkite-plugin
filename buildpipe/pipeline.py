@@ -26,8 +26,8 @@ class BuildpipeException(Exception):
     pass
 
 
-def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[str]:
-    """Return a list of strings or tuples where argument can also be a string"""
+def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[Union[str, Tuple[str]]]:
+    """Return a list of strings or tuples where argument can be multiple types"""
     if arg is None or len(arg) == 0:
         return []
     elif isinstance(arg, str):
@@ -38,8 +38,8 @@ def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[str]:
         raise ValueError(f"Argument is neither None, string nor list. Found {arg}")
 
 
-def _get_block(project: box.Box):
-    # TODO: deprecate and remove block_steps
+def _get_block(project: box.Box) -> List[Union[str, Tuple[str]]]:
+    # TODO: remove when block_steps is removed from schema
     return _listify(project.block_stairs) + _listify(project.block_steps)
 
 
@@ -124,6 +124,7 @@ def generate_project_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]
                 'BUILDPIPE_PROJECT_NAME': project.name,
                 'BUILDPIPE_PROJECT_PATH': project.path,
                 # Deprecated environment variable names
+                # TODO: remove when cutover to new minor version
                 'STAIR_NAME': stair.name,
                 'STAIR_SCOPE': stair.scope,
                 'PROJECT_NAME': project.name,
@@ -205,8 +206,10 @@ def check_tag_rules(stair_tags: TAGS, project_tags: TAGS, project_skip_tags: TAG
     if len(stair_tags) == 0:
         return True
 
+    # Iterate through stair tags and check if projects having matching tags
     for stair_tag in stair_tags:
         stair_tag_set = set(list(_listify(stair_tag)))
+        # Skip any steps a project wants to skip
         if len(stair_tag_set & project_skip_tags_set) > 0:
             return False
         else:
@@ -217,7 +220,7 @@ def check_tag_rules(stair_tags: TAGS, project_tags: TAGS, project_skip_tags: TAG
 
 
 def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box.Box, None, None]:
-    stair_tags = stair.tags or []
+    stair_tags = _listify(stair.tags)
     for project in projects:
         project_tags = _listify(project.tags)
         project_skip_tags = _listify(project.skip) + _listify(project.skip_stairs)
