@@ -39,13 +39,12 @@ def steps_to_yaml(steps):
     # Skips take priority
     (['foo'], ['foo'], ['foo'], False),
     # Matching tags using tag groups
-    ([['foo', 'bar'], 'baz'], [['foo', 'bar']], [], True),
+    ([('foo', 'bar'), 'baz'], ['foo', 'bar'], [], True),
     # Matching skips using tag groups
-    ([['foo', 'bar'], 'baz'], [], [['foo', 'bar']], False),
+    ([('foo', 'bar'), 'baz'], [], ['foo'], False),
     # Non-matching tag groups despite some matching
-    ([['foo', 'bar']], ['bar'], [], False),
-    # Non-matching tag skips despite some matching
-    ([['foo', 'bar']], [['foo', 'bar']], ['bar'], True),
+    ([('foo', 'bar')], ['foo'], [], False),
+    ([('foo', 'bar')], ['bar'], [], False),
 ])
 def test_check_tag_rules(stair_tags, project_tags, project_skip_tags, expected):
     assert pipeline.check_tag_rules(stair_tags, project_tags, project_skip_tags) == expected
@@ -198,6 +197,10 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: pyproject
         BUILDPIPE_STAIR_NAME: test
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
       label: 'test pyproject :python:'
     - wait
     - agents:
@@ -212,6 +215,10 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: pyproject
         BUILDPIPE_STAIR_NAME: build
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: build
+        STAIR_SCOPE: project
       label: 'build pyproject :docker:'
     - wait
     - branches: master
@@ -232,6 +239,10 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: pyproject
         BUILDPIPE_STAIR_NAME: deploy-staging
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
+        STAIR_NAME: deploy-staging
+        STAIR_SCOPE: project
       label: 'deploy-staging pyproject :shipit:'
     - wait
     - branches: master
@@ -245,7 +256,11 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: pyproject
         BUILDPIPE_STAIR_NAME: deploy-prod
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: pyproject
+        PROJECT_PATH: pyproject
         SOME_ENV: 'true'
+        STAIR_NAME: deploy-prod
+        STAIR_SCOPE: project
       label: 'deploy-prod pyproject :shipit:'
     """).lstrip()
 
@@ -286,6 +301,54 @@ def test_skip(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: myproject
         BUILDPIPE_STAIR_NAME: test
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: 'test myproject :python:'
+    """).lstrip()
+
+
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: test
+        scope: project
+        buildkite:
+          command:
+            - make test
+      - name: build
+        scope: project
+        buildkite:
+          command:
+            - make build
+    projects:
+      - name: myproject
+        path: myproject
+        emoji: ":python:"
+        skip_stairs:
+          - build
+    """)
+    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test
+      env:
+        BUILDPIPE_PROJECT_NAME: myproject
+        BUILDPIPE_PROJECT_PATH: myproject
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
       label: 'test myproject :python:'
     """).lstrip()
 
@@ -328,6 +391,10 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: project1
         BUILDPIPE_STAIR_NAME: test-integration
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: project1
+        PROJECT_PATH: project1
+        STAIR_NAME: test-integration
+        STAIR_SCOPE: project
       label: test-integration project1
     """).lstrip()
 
@@ -349,13 +416,14 @@ def test_tag_groups(mock_get_changed_files, mock_get_git_branch):
       - name: project1
         path: project1
         tags:
-          - ["bar", "baz"]
+          - bar
+          - baz
       - name: project2
         path: project2
       - name: project3
         path: project3
         skip:
-          - ["bar", "baz"]
+          - bar
     """)
     mock_get_changed_files.return_value = {'project1/README.md', 'project2/README.md', 'project3/README.md'}
     mock_get_git_branch.return_value = 'master'
@@ -371,6 +439,10 @@ def test_tag_groups(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: project1
         BUILDPIPE_STAIR_NAME: step1
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: project1
+        PROJECT_PATH: project1
+        STAIR_NAME: step1
+        STAIR_SCOPE: project
       label: step1 project1
     """).lstrip()
 
@@ -405,6 +477,10 @@ def test_project_substring(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: project-api
         BUILDPIPE_STAIR_NAME: test
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: project-api
+        PROJECT_PATH: project-api
+        STAIR_NAME: test
+        STAIR_SCOPE: project
       label: test project-api
     """).lstrip()
 
@@ -440,6 +516,10 @@ def test_project_env(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_STAIR_NAME: test
         BUILDPIPE_STAIR_SCOPE: project
         DEPLOYMENT_TYPE: job
+        PROJECT_NAME: project
+        PROJECT_PATH: project
+        STAIR_NAME: test
+        STAIR_SCOPE: project
       label: test project
     """).lstrip()
 
@@ -484,6 +564,10 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: myproject
         BUILDPIPE_STAIR_NAME: test
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
       label: 'test myproject :python:'
     """).lstrip()
 
@@ -549,6 +633,10 @@ def test_block_stairs(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: myproject
         BUILDPIPE_STAIR_NAME: test
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
       label: 'test myproject :python:'
     - wait
     - block: Release!
@@ -561,6 +649,10 @@ def test_block_stairs(mock_get_changed_files, mock_get_git_branch):
         BUILDPIPE_PROJECT_PATH: myproject
         BUILDPIPE_STAIR_NAME: deploy
         BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: deploy
+        STAIR_SCOPE: project
       label: 'deploy myproject :python:'
     """).lstrip()
 
