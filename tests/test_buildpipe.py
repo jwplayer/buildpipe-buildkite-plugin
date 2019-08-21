@@ -657,6 +657,56 @@ def test_block_stairs(mock_get_changed_files, mock_get_git_branch):
     """).lstrip()
 
 
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_wait_continue_on_failure(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: test
+        scope: project
+        continue_on_failure: true
+        buildkite:
+          command:
+            - make test
+      - name: cleanup
+        scope: stair
+        buildkite:
+          command:
+            - make cleanup
+    projects:
+      - name: project
+        path: project
+    """)
+    mock_get_changed_files.return_value = {'project/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test
+      env:
+        BUILDPIPE_PROJECT_NAME: project
+        BUILDPIPE_PROJECT_PATH: project
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: project
+        PROJECT_PATH: project
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: test project
+    - continue_on_failure: true
+      wait: null
+    - command:
+      - make cleanup
+      env:
+        BUILDPIPE_STAIR_NAME: cleanup
+        BUILDPIPE_STAIR_SCOPE: stair
+      label: cleanup
+    """).lstrip()
+
+
 def test_create_parser():
     parser = create_parser()
     command = "--infile file.yml --dry-run"

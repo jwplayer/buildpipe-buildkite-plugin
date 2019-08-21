@@ -103,8 +103,15 @@ def buildkite_override(step_func: Callable) -> Callable:
     return func_wrapper
 
 
-def generate_wait_step() -> List[str]:
+def generate_default_wait_step() -> List[str]:
     return ['wait']
+
+
+def generate_wait_step(stair: box.Box) -> List[str]:
+    if stair.continue_on_failure:
+        return [{'wait': None, 'continue_on_failure': True}]
+    else:
+        return generate_default_wait_step()
 
 
 def generate_block_step(block: Dict, stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
@@ -237,12 +244,14 @@ def compile_steps(config: box.Box) -> box.Box:
     scope_fn = dict(project=generate_project_steps, stair=generate_stair_steps)
 
     steps = []
+    previous_stair = box.Box({'continue_on_failure': False})
     for stair in iter_stairs(config.stairs, can_autodeploy):
         stair_projects = list(iter_stair_projects(stair, projects))
         if stair_projects:
-            steps += generate_wait_step()
+            steps += generate_wait_step(previous_stair)
             steps += generate_block_step(config.block.to_dict(), stair, stair_projects)
             steps += scope_fn[stair.scope](stair, stair_projects)
+        previous_stair = stair
 
     return box.Box({'steps': steps})
 

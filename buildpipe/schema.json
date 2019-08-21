@@ -103,6 +103,10 @@
           "type": "boolean",
           "description": "Whether to apply deployment logic such as business hour rules"
         },
+        "continue_on_failure": {
+          "type": "boolean",
+          "description": "Whether to continue if the stair fails"
+        },
         "buildkite": {
           "type": "object",
           "description": "Buildkite step details"
