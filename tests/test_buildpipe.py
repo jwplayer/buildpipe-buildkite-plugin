@@ -6,10 +6,10 @@ import datetime
 import textwrap
 from unittest import mock
 
-import yaml
 import pytest
 import freezegun
 from box import Box
+from ruamel import yaml
 
 from buildpipe import pipeline
 from buildpipe.__main__ import create_parser

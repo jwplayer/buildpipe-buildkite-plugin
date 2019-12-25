@@ -19,8 +19,8 @@ setup(
     license='MIT',
     install_requires=[
         'jsonschema>=2.6.0',
-        'pyaml>=17.10.0',
-        'python-box>=3.1.1',
+        'ruamel.yaml>=0.16.5',
+        'python-box>=4.0.1',
         'pytz>=2017.2',
     ],
     setup_requires=[

@@ -12,9 +12,9 @@ import collections
 from typing import Dict, List, Tuple, Set, Generator, Callable, NoReturn, Union
 
 import box
-import yaml
 import pytz
 import jsonschema
+from ruamel import yaml
 
 TAGS = List[Union[str, Tuple[str]]]
 
