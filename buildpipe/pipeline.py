@@ -237,13 +237,11 @@ def iter_stair_projects(stair: box.Box, projects: Set[box.Box]) -> Generator[box
 
 
 def check_for_trigger_steps(build_steps):
-    updated_steps = []
     for step in build_steps:
         if 'trigger' in step:
             step['build'] = {}
             step['build']['env'] = step['env']
             del step['env']
-    return updated_steps
 
 
 def compile_steps(config: box.Box) -> box.Box:
@@ -261,7 +259,7 @@ def compile_steps(config: box.Box) -> box.Box:
             steps += generate_wait_step(previous_stair)
             steps += generate_block_step(config.block.to_dict(), stair, stair_projects)
             steps += scope_fn[stair.scope](stair, stair_projects)
-        steps = check_for_trigger_steps(steps)
+        check_for_trigger_steps(steps)
         previous_stair = stair
 
     return box.Box({'steps': steps})

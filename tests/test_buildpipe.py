@@ -714,3 +714,39 @@ def test_create_parser():
     assert args.dry_run
     assert args.infile == 'file.yml'
     assert args.outfile == 'pipeline.yml'
+
+
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
+def test_trigger_step(mock_get_changed_files, mock_get_git_branch):
+    config = box_from_yaml("""
+    stairs:
+      - name: test
+        scope: project
+        buildkite:
+          trigger: "pipeline name"
+    projects:
+      - name: project
+        path: project
+    """)
+    mock_get_changed_files.return_value = {'project/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - trigger: "pipeline name"
+      build:
+        env:
+          BUILDPIPE_PROJECT_NAME: project
+          BUILDPIPE_PROJECT_PATH: project
+          BUILDPIPE_STAIR_NAME: test
+          BUILDPIPE_STAIR_SCOPE: project
+          DEPLOYMENT_TYPE: job
+          PROJECT_NAME: project
+          PROJECT_PATH: project
+          STAIR_NAME: test
+          STAIR_SCOPE: project
+      label: test project
+    """).lstrip()
