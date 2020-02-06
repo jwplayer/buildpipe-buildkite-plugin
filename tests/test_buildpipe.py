@@ -736,8 +736,7 @@ def test_trigger_step(mock_get_changed_files, mock_get_git_branch):
     assert pipeline_yml == textwrap.dedent("""
     steps:
     - wait
-    - trigger: "pipeline name"
-      build:
+    - build:
         env:
           BUILDPIPE_PROJECT_NAME: project
           BUILDPIPE_PROJECT_PATH: project
@@ -749,4 +748,5 @@ def test_trigger_step(mock_get_changed_files, mock_get_git_branch):
           STAIR_NAME: test
           STAIR_SCOPE: project
       label: test project
+      trigger: "pipeline name"
     """).lstrip()
