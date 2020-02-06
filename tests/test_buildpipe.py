@@ -724,7 +724,7 @@ def test_trigger_step(mock_get_changed_files, mock_get_git_branch):
       - name: test
         scope: project
         buildkite:
-          trigger: "pipeline name"
+          trigger: "pipeline-name"
     projects:
       - name: project
         path: project
@@ -742,11 +742,10 @@ def test_trigger_step(mock_get_changed_files, mock_get_git_branch):
           BUILDPIPE_PROJECT_PATH: project
           BUILDPIPE_STAIR_NAME: test
           BUILDPIPE_STAIR_SCOPE: project
-          DEPLOYMENT_TYPE: job
           PROJECT_NAME: project
           PROJECT_PATH: project
           STAIR_NAME: test
           STAIR_SCOPE: project
       label: test project
-      trigger: "pipeline name"
+      trigger: pipeline-name
     """).lstrip()
