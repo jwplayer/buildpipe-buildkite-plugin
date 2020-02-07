@@ -32,7 +32,7 @@ def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[Union[str, Tu
         return []
     elif isinstance(arg, str):
         return [arg]
-    elif (isinstance(arg, list) or isinstance(arg, tuple)):
+    elif isinstance(arg, list) or isinstance(arg, tuple):
         return list(arg)
     else:
         raise ValueError(f"Argument is neither None, string nor list. Found {arg}")
@@ -67,7 +67,7 @@ def get_changed_files(branch: str, deploy_branch: str) -> Set[str]:
     if branch == deploy_branch:
         command = ['git', 'log', '-m', '-1', '--name-only', '--pretty=format:', commit]
     else:
-        command = ['git', 'whatchanged', '--name-only', '--pretty=format:', 'origin..HEAD']
+        command = ['git', 'log', '--name-only', '--no-merges', '--pretty=format:', 'origin..HEAD']
 
     try:
         result = subprocess.run(command, stdout=subprocess.PIPE, check=True)

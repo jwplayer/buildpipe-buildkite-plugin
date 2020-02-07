@@ -79,6 +79,11 @@
             "type": "string"
           },
           "description": "Filter steps by matching tags"
+        },
+        "last_commit_only": {
+          "type": "boolean",
+          "description": "Project specific setting - Check either only the paths from the last commit or the paths from the complete history (Default: false - complete history)",
+          "default": false
         }
       },
       "required": ["name", "path"],
@@ -121,6 +126,11 @@
     }
   },
   "properties": {
+    "last_commit_only": {
+      "type": "boolean",
+      "description": "Gloabal setting - Check either only the paths from the last commit or the paths from the complete history (Default: false - complete history)",
+      "default": false
+    },
     "ignore": {
       "type": "array",
       "items": {
