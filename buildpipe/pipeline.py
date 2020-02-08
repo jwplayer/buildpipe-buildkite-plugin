@@ -62,12 +62,15 @@ def get_deploy_branch(config: box.Box) -> str:
     return config.deploy.branch or 'master'
 
 
-def get_changed_files(branch: str, deploy_branch: str) -> Set[str]:
+def get_changed_files(branch: str, deploy_branch: str, last_commit_only: bool) -> Set[str]:
     commit = os.getenv('BUILDKITE_COMMIT') or branch
     if branch == deploy_branch:
         command = ['git', 'log', '-m', '-1', '--name-only', '--pretty=format:', commit]
     else:
-        command = ['git', 'log', '--name-only', '--no-merges', '--pretty=format:', 'origin..HEAD']
+        if last_commit_only:
+            command = ['git', 'log', '-1', '--name-only', '--no-merges', '--pretty=format:', 'origin..HEAD']
+        else:
+            command = ['git', 'log', '--name-only', '--no-merges', '--pretty=format:', 'origin..HEAD']
 
     try:
         result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
@@ -171,7 +174,7 @@ def check_project_affected(changed_files: Set[str], project: box.Box) -> bool:
 
 def get_affected_projects(branch: str, config: box.Box) -> Set[box.Box]:
     deploy_branch = get_deploy_branch(config)
-    changed_files = get_changed_files(branch, deploy_branch)
+    changed_files = get_changed_files(branch, deploy_branch, config.last_commit_only)
     changed_with_ignore = {f for f in changed_files if not any(fnmatch.fnmatch(f, i) for i in config.get('ignore', []))}
     return {p for p in config.projects if check_project_affected(changed_with_ignore, p)}
 
