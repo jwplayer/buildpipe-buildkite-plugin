@@ -17,7 +17,7 @@ Buildpipe
 Buildpipe allows you to dynamically generate your Buildkite pipelines so that you can:
 
 - Manage continuous deployment logic such as only deploying during business hours
-- Maintain monorepos by only looking at git changes in specified projects
+- Maintain monorepos by only looking at git changes in specified projects from the history you want to include
 - Specify dependencies between projects so that their steps are concurrent
 
 Install
@@ -180,6 +180,23 @@ In the above config, if only files under `pyproject` were touched and the merge 
           BUILDPIPE_STAIR_NAME: deploy-prod
           BUILDPIPE_STAIR_SCOPE: project
         label: 'deploy-prod pyproject :shipit:'
+
+
+Additional Features
+-------------------
+
+.. code-block:: yaml
+
+    # Only check the last commit for new changes
+    last_commit_only: true
+
+    # trigger deploy steps on master during business hours
+    deploy:
+      branch: master
+      timezone: US/Eastern
+
+The :code:`last_commit_only` flag allows you to choose between change detection in the whole history or only in the last commit that happened.
+
 
 Set up
 ------
