@@ -121,6 +121,11 @@
     }
   },
   "properties": {
+    "last_commit_only": {
+      "type": "boolean",
+      "description": "Global setting - Check either only the paths from the last commit or the paths from the complete history (Default: false - complete history)",
+      "default": false
+    },
     "ignore": {
       "type": "array",
       "items": {
