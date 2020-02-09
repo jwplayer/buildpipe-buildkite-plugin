@@ -194,8 +194,12 @@ Additional Features
     deploy:
       branch: master
       timezone: US/Eastern
+    .
+    .
+    .
 
 The :code:`last_commit_only` flag allows you to choose between change detection in the whole history or only in the last commit that happened.
+This feature is only applied if the current branch is **not** the defined :code:`deploy` branch.
 
 
 Set up
