@@ -93,12 +93,12 @@ def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
       - name: project3
         path: project3
       - name: project4
-        path: project4
+        path: project4/
         dependencies:
           - project2
           - project3
       - name: project5
-        path: nested/path
+        path: nested/path/
     """))
     mock_get_changed_files.return_value = changed_files
     projects = pipeline.get_affected_projects('branch', config)

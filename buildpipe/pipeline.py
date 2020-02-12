@@ -163,11 +163,12 @@ def generate_stair_steps(stair: box.Box, projects: Set[box.Box]) -> List[Dict]:
 
 def check_project_affected(changed_files: Set[str], project: box.Box) -> bool:
     for path in [project.path] + list(project.get('dependencies', [])):
+        if path == '.':
+            return True
+        project_dirs = os.path.normpath(path).split('/')
         for changed_file in changed_files:
-            project_dirs = path.split('/')
             changed_dirs = changed_file.split('/')
-
-            if path == '.' or changed_dirs[:len(project_dirs)] == project_dirs:
+            if changed_dirs[:len(project_dirs)] == project_dirs:
                 return True
     return False
 
