@@ -1,8 +1,8 @@
 Buildpipe
 =========
 
-.. image:: https://travis-ci.org/ksindi/buildpipe.svg?branch=master
-    :target: https://travis-ci.org/ksindi/buildpipe
+.. image:: https://travis-ci.org/jwplayer/buildpipe.svg?branch=master
+    :target: https://travis-ci.org/jwplayer/buildpipe
     :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/buildpipe/badge/?version=latest
