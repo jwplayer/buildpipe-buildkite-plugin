@@ -18,9 +18,9 @@ setup(
     keywords='pipeline buildkite cicd'.split(),
     license='MIT',
     install_requires=[
-        'jsonschema>=2.6.0',
-        'ruamel.yaml>=0.16.5',
-        'pytz>=2017.2',
+        'jsonschema>=3.2.0',
+        'ruamel.yaml>=0.16.10',
+        'pytz>=2019.3',
     ],
     setup_requires=[
         'pytest-runner',
