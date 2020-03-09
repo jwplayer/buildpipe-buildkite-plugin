@@ -16,6 +16,7 @@ from buildpipe.__main__ import create_parser
 
 
 def dump_to_string(d):
+    # Helper method becaues ruamel can only dump to a stream
     with io.StringIO() as buf, contextlib.redirect_stdout(buf):
         pipeline.yaml.dump(d, sys.stdout)
         return buf.getvalue()
