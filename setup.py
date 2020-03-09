@@ -20,7 +20,6 @@ setup(
     install_requires=[
         'jsonschema>=2.6.0',
         'ruamel.yaml>=0.16.5',
-        'python-box>=4.0.1',
         'pytz>=2017.2',
     ],
     setup_requires=[

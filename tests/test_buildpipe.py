@@ -8,19 +8,19 @@ from unittest import mock
 
 import pytest
 import freezegun
-from box import Box
+import ruamel
 from ruamel import yaml
 
 from buildpipe import pipeline
 from buildpipe.__main__ import create_parser
 
 
-def box_from_yaml(s):
-    return Box(yaml.load(s), **pipeline.BOX_CONFIG)
+def load_yaml(s):
+    return yaml.load(s, Loader=ruamel.yaml.Loader)
 
 
 def steps_to_yaml(steps):
-    return steps.to_yaml(Dumper=yaml.dumper.SafeDumper)
+    return yaml.dump(steps, Dumper=yaml.dumper.SafeDumper, default_flow_style=False)
 
 
 @pytest.mark.parametrize('stair_tags,project_tags,project_skip_tags,expected', [
@@ -77,7 +77,7 @@ def test_update_dicts(source, overrides, expected):
 ])
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
-    config = box_from_yaml(io.StringIO("""
+    config = load_yaml(io.StringIO("""
     ignore:
       - '*.md'
       - 'project1/*.ini'
@@ -102,7 +102,7 @@ def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
     """))
     mock_get_changed_files.return_value = changed_files
     projects = pipeline.get_affected_projects('branch', config)
-    assert set(p.name for p in projects) == expected
+    assert set(p['name'] for p in projects) == expected
 
 
 @pytest.mark.parametrize('test_dt, expected', [
@@ -116,7 +116,7 @@ def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
     (datetime.datetime(2013, 11, 24, 12, 0, 0), False),  # Sunday
 ])
 def test_check_autodeploy(test_dt, expected):
-    config = box_from_yaml(io.StringIO("""
+    config = load_yaml(io.StringIO("""
     deploy:
       timezone: UTC
       allowed_hours_regex: '9|1[0-7]'
@@ -131,7 +131,7 @@ def test_check_autodeploy(test_dt, expected):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     deploy: {}
     stairs:
       - name: test
@@ -268,7 +268,7 @@ def test_compile_steps(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_skip(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test
         scope: project
@@ -312,7 +312,7 @@ def test_skip(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test
         scope: project
@@ -355,8 +355,55 @@ def test_skip_stairs(mock_get_changed_files, mock_get_git_branch):
 
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
+def test_plugins(mock_get_changed_files, mock_get_git_branch):
+    config = load_yaml("""
+    stairs:
+      - name: test
+        scope: project
+        buildkite:
+          command:
+            - make test
+          plugins:
+            - docker-login#v2.0.1:
+              - server: containers.amphoratech.net
+                username: myUser
+                password-env: MY_PASS
+    projects:
+      - name: myproject
+        path: myproject
+        emoji: ":python:"
+    """)
+    mock_get_changed_files.return_value = {'origin..HEAD', 'myproject/README.md'}
+    mock_get_git_branch.return_value = 'master'
+    steps = pipeline.compile_steps(config)
+    pipeline_yml = steps_to_yaml(steps)
+    assert pipeline_yml == textwrap.dedent("""
+    steps:
+    - wait
+    - command:
+      - make test
+      env:
+        BUILDPIPE_PROJECT_NAME: myproject
+        BUILDPIPE_PROJECT_PATH: myproject
+        BUILDPIPE_STAIR_NAME: test
+        BUILDPIPE_STAIR_SCOPE: project
+        PROJECT_NAME: myproject
+        PROJECT_PATH: myproject
+        STAIR_NAME: test
+        STAIR_SCOPE: project
+      label: 'test myproject :python:'
+      plugins:
+      - docker-login#v2.0.1:
+        - password-env: MY_PASS
+          server: containers.amphoratech.net
+          username: myUser
+    """).lstrip()
+
+
+@mock.patch('buildpipe.pipeline.get_git_branch')
+@mock.patch('buildpipe.pipeline.get_changed_files')
 def test_tags(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test-integration
         scope: project
@@ -402,7 +449,7 @@ def test_tags(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_tag_groups(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: step1
         scope: project
@@ -450,7 +497,7 @@ def test_tag_groups(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_project_substring(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test
         scope: project
@@ -488,7 +535,7 @@ def test_project_substring(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_project_env(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test
         scope: project
@@ -528,7 +575,7 @@ def test_project_env(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     deploy:
       branch: master
       timezone: UTC
@@ -574,7 +621,7 @@ def test_no_deploy(mock_get_changed_files, mock_get_git_branch):
 
 def test_invalidate_config():
     with pytest.raises(pipeline.BuildpipeException):
-        config = box_from_yaml("""
+        config = load_yaml("""
         stairs:
           - name: test
             scope: project
@@ -595,7 +642,7 @@ def test_create_pipeline(mock_get_changed_files):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_block_stairs(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     deploy:
       branch: master
     block:
@@ -660,7 +707,7 @@ def test_block_stairs(mock_get_changed_files, mock_get_git_branch):
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_wait_continue_on_failure(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test
         scope: project
@@ -719,7 +766,7 @@ def test_create_parser():
 @mock.patch('buildpipe.pipeline.get_git_branch')
 @mock.patch('buildpipe.pipeline.get_changed_files')
 def test_trigger_step(mock_get_changed_files, mock_get_git_branch):
-    config = box_from_yaml("""
+    config = load_yaml("""
     stairs:
       - name: test
         scope: project
