@@ -19,11 +19,6 @@ from ruamel import yaml
 TAGS = List[Union[str, Tuple[str]]]
 
 
-class Hashabledict(dict):
-    def __hash__(self):
-        return hash(frozenset(self))
-
-
 class BuildpipeException(Exception):
     pass
 
@@ -103,7 +98,7 @@ def _update_dicts(source: Dict, overrides: Dict) -> Dict:
 
 def buildkite_override(step_func: Callable) -> Callable:
     @functools.wraps(step_func)
-    def func_wrapper(stair: Dict, projects: Set[Hashabledict]) -> List[Dict]:
+    def func_wrapper(stair: Dict, projects: List[Dict]) -> List[Dict]:
         return [_update_dicts(step, stair.get("buildkite", {})) for step in step_func(stair, projects)]
     return func_wrapper
 
@@ -119,13 +114,13 @@ def generate_wait_step(stair: Dict) -> List[str]:
         return generate_default_wait_step()
 
 
-def generate_block_step(block: Dict, stair: Dict, projects: Set[Hashabledict]) -> List[Dict]:
+def generate_block_step(block: Dict, stair: Dict, projects: List[Dict]) -> List[Dict]:
     has_block = any(stair['name'] in _get_block(project) for project in projects)
     return [block] if has_block else []
 
 
 @buildkite_override
-def generate_project_steps(stair: Dict, projects: Set[Hashabledict]) -> List[Dict]:
+def generate_project_steps(stair: Dict, projects: List[Dict]) -> List[Dict]:
     steps = []
     for project in projects:
         step = {
@@ -153,7 +148,7 @@ def generate_project_steps(stair: Dict, projects: Set[Hashabledict]) -> List[Dic
 
 
 @buildkite_override
-def generate_stair_steps(stair: Dict, projects: Set[Hashabledict]) -> List[Dict]:
+def generate_stair_steps(stair: Dict, projects: List[Dict]) -> List[Dict]:
     return [{
         'label': f'{stair["name"]} {stair.get("emoji") or ""}'.strip(),
         'env': {
@@ -163,7 +158,7 @@ def generate_stair_steps(stair: Dict, projects: Set[Hashabledict]) -> List[Dict]
     }] if projects else []
 
 
-def check_project_affected(changed_files: Set[str], project: Hashabledict) -> bool:
+def check_project_affected(changed_files: Set[str], project: Dict) -> bool:
     for path in [project['path']] + list(project.get('dependencies', [])):
         if path == '.':
             return True
@@ -175,16 +170,16 @@ def check_project_affected(changed_files: Set[str], project: Hashabledict) -> bo
     return False
 
 
-def get_affected_projects(branch: str, config: Dict) -> Set[Hashabledict]:
+def get_affected_projects(branch: str, config: Dict) -> List[Dict]:
     deploy_branch = get_deploy_branch(config)
     changed_files = get_changed_files(branch, deploy_branch, config.get('last_commit_only'))
-    changed_with_ignore = {f for f in changed_files if not any(fnmatch.fnmatch(f, i) for i in config.get('ignore', []))}
-    return {Hashabledict(p) for p in config.get('projects', []) if check_project_affected(changed_with_ignore, p)}
+    filtered_files = {f for f in changed_files if not any(fnmatch.fnmatch(f, i) for i in config.get('ignore', []))}
+    return [p for p in config.get('projects', []) if check_project_affected(filtered_files, p)]
 
 
-def iter_stairs(stairs: List[Hashabledict], can_autodeploy: bool) -> Generator[Dict, None, None]:
+def iter_stairs(stairs: List[Dict], can_autodeploy: bool) -> Generator[Dict, None, None]:
     for stair in stairs:
-        is_deploy = stair.get('deploy', False) is True
+        is_deploy = stair.get('deploy') is True
         if not is_deploy or (is_deploy and can_autodeploy):
             yield stair
 
@@ -232,10 +227,11 @@ def check_tag_rules(stair_tags: TAGS, project_tags: TAGS, project_skip_tags: TAG
     return False
 
 
-def iter_stair_projects(stair: Dict, projects: Set[Hashabledict]) -> Generator[Dict, None, None]:
+def iter_stair_projects(stair: Dict, projects: List[Dict]) -> Generator[Dict, None, None]:
     stair_tags = _listify(stair.get('tags', []))
     for project in projects:
         project_tags = _listify(project.get('tags', []))
+        # TODO: remove deprecated skip_stairs in new version
         project_skip_tags = _listify(project.get('skip', [])) + _listify(project.get('skip_stairs', []))
         check_stair_name = stair['name'] not in project_skip_tags
         if check_stair_name and check_tag_rules(stair_tags, project_tags, project_skip_tags):
