@@ -136,7 +136,7 @@ def generate_project_steps(stair: Dict, projects: List[Dict]) -> List[Dict]:
                 'PROJECT_NAME': project['name'],
                 'PROJECT_PATH': project['path'],
                 # Add other environment variables specific to project
-                **project.get('env', {})
+                **(project.get('env') or {})
             }
         }
         if stair.get('deploy'):
