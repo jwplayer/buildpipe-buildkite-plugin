@@ -8,7 +8,6 @@ from unittest import mock
 
 import pytest
 import freezegun
-import ruamel
 from ruamel import yaml
 
 from buildpipe import pipeline
@@ -16,7 +15,7 @@ from buildpipe.__main__ import create_parser
 
 
 def load_yaml(s):
-    return yaml.load(s, Loader=ruamel.yaml.Loader)
+    return yaml.load(s, Loader=yaml.Loader)
 
 
 def steps_to_yaml(steps):
