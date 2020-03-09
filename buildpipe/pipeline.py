@@ -99,7 +99,7 @@ def _update_dicts(source: Dict, overrides: Dict) -> Dict:
 def buildkite_override(step_func: Callable) -> Callable:
     @functools.wraps(step_func)
     def func_wrapper(stair: Dict, projects: List[Dict]) -> List[Dict]:
-        return [_update_dicts(step, stair.get("buildkite", {})) for step in step_func(stair, projects)]
+        return [_update_dicts(step, stair.get('buildkite', {})) for step in step_func(stair, projects)]
     return func_wrapper
 
 
