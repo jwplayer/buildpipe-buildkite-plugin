@@ -13,15 +13,14 @@ setup(
     packages=find_packages(exclude=['tests', 'examples']),
     use_scm_version=True,
     author='Kamil Sindi',
-    author_email='ksindi@ksindi.com',
-    url='https://github.com/ksindi/buildpipe',
+    author_email='kamil@jwplayer.com',
+    url='https://github.com/jwplayer/buildpipe',
     keywords='pipeline buildkite cicd'.split(),
     license='MIT',
     install_requires=[
-        'jsonschema>=2.6.0',
-        'ruamel.yaml>=0.16.5',
-        'python-box>=4.0.1',
-        'pytz>=2017.2',
+        'jsonschema>=3.2.0',
+        'ruamel.yaml>=0.16.10',
+        'pytz>=2019.3',
     ],
     setup_requires=[
         'pytest-runner',
@@ -49,5 +48,6 @@ setup(
         Programming Language :: Python :: 3
         Programming Language :: Python :: 3.6
         Programming Language :: Python :: 3.7
+        Programming Language :: Python :: 3.8
         """).strip().splitlines(),
 )
