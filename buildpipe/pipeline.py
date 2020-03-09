@@ -13,13 +13,17 @@ from typing import Dict, List, Tuple, Set, Generator, Callable, NoReturn, Union
 
 import pytz
 import jsonschema
-from ruamel import yaml
+from ruamel.yaml import YAML
 
 TAGS = List[Union[str, Tuple[str]]]
 
 
 class BuildpipeException(Exception):
     pass
+
+
+yaml = YAML(typ='safe')
+yaml.default_flow_style = False
 
 
 def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[Union[str, Tuple[str]]]:
@@ -268,8 +272,8 @@ def compile_steps(config: Dict) -> Dict:
 
 def create_pipeline(infile: str, outfile: str, dry_run: bool = False) -> NoReturn:
     with open(infile, 'r') as in_f:
-        config = yaml.load(in_f, Loader=yaml.Loader)
+        config = yaml.load(in_f)
     steps = compile_steps(config)
     if not dry_run:
         with open(outfile, 'w') as out_f:
-            yaml.dump(steps, out_f, Dumper=yaml.dumper.SafeDumper, default_flow_style=False)
+            yaml.dump(steps, out_f)
