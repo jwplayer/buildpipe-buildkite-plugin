@@ -13,8 +13,8 @@ setup(
     packages=find_packages(exclude=['tests', 'examples']),
     use_scm_version=True,
     author='Kamil Sindi',
-    author_email='ksindi@ksindi.com',
-    url='https://github.com/ksindi/buildpipe',
+    author_email='kamil@jwplayer.com',
+    url='https://github.com/jwplayer/buildpipe',
     keywords='pipeline buildkite cicd'.split(),
     license='MIT',
     install_requires=[
