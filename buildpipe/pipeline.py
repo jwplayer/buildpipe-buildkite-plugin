@@ -91,7 +91,7 @@ def get_changed_files(branch: str, deploy_branch: str, last_commit_only: bool) -
 
 def _update_dicts(source: Dict, overrides: Dict) -> Dict:
     for key, value in overrides.items():
-        if isinstance(value, collections.Mapping) and value:
+        if isinstance(value, collections.abc.Mapping) and value:
             returned = _update_dicts(source.get(key, {}), value)
             source[key] = returned
         else:
