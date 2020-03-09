@@ -40,9 +40,9 @@ def _listify(arg: Union[None, str, List[str], Tuple[str]]) -> List[Union[str, Tu
         raise ValueError(f"Argument is neither None, string nor list. Found {arg}")
 
 
-def _get_block(project: dict) -> List[Union[str, Tuple[str]]]:
+def _get_block(project: Dict) -> List[Union[str, Tuple[str]]]:
     # TODO: remove when block_steps is removed from schema
-    return _listify(project.get("block_stairs", [])) + _listify(project.get("block_steps", []))
+    return _listify(project.get('block_stairs', [])) + _listify(project.get('block_steps', []))
 
 
 def get_git_branch() -> str:
