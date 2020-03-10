@@ -1,11 +1,9 @@
 import io
-import sys
 import shlex
 import tempfile
 import pathlib
 import datetime
 import textwrap
-import contextlib
 from unittest import mock
 
 import pytest
@@ -16,9 +14,8 @@ from buildpipe.__main__ import create_parser
 
 
 def dump_to_string(d):
-    # Helper method becaues ruamel can only dump to a stream
-    with io.StringIO() as buf, contextlib.redirect_stdout(buf):
-        pipeline.yaml.dump(d, sys.stdout)
+    with io.StringIO() as buf:
+        pipeline.yaml.dump(d, buf)
         return buf.getvalue()
 
 
