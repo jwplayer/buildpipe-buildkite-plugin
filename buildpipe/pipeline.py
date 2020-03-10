@@ -8,8 +8,7 @@ import pathlib
 import datetime
 import functools
 import subprocess
-import collections
-from typing import Dict, List, Tuple, Set, Generator, Callable, NoReturn, Union
+from typing import Dict, List, Tuple, Set, Generator, Callable, NoReturn, Union, Mapping
 
 import pytz
 import jsonschema
@@ -91,7 +90,7 @@ def get_changed_files(branch: str, deploy_branch: str, last_commit_only: bool) -
 
 def _update_dicts(source: Dict, overrides: Dict) -> Dict:
     for key, value in overrides.items():
-        if isinstance(value, collections.abc.Mapping) and value:
+        if isinstance(value, Mapping) and value:
             returned = _update_dicts(source.get(key, {}), value)
             source[key] = returned
         else:
