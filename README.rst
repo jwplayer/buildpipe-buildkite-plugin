@@ -205,12 +205,14 @@ This feature is only applied if the current branch is **not** the defined :code:
 Troubleshooting
 ###############
 
-``Buildpipe is showing projects as changed when they're not``
-=============================================================
+Buildpipe is showing projects as changed when they're not
+*********************************************************
 
-Buildkite doesn't by default do clean checkouts. To enable clean checkouts modify the pre-checkout hook, `.buildkite/hooks/pre-checkout`:
+Buildkite doesn't by default do clean checkouts. To enable clean checkouts set the ``BUILDKITE_CLEAN_CHECKOUT`` `environment variable
+<https://buildkite.com/docs/pipelines/environment-variables>`_. An example is to modify the pre-checkout hook, ``.buildkite/hooks/pre-checkout``:
 
-::
+.. code-block:: 
+
     #!/bin/bash
     set -euo pipefail
 
