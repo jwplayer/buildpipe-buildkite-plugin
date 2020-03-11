@@ -201,6 +201,23 @@ Additional Features
 The :code:`last_commit_only` flag allows you to choose between change detection in the whole history or only in the last commit that happened.
 This feature is only applied if the current branch is **not** the defined :code:`deploy` branch, which by default is `master`.
 
+###############
+Troubleshooting
+###############
+
+``Buildpipe is showing projects as changed when they're not``
+=============================================================
+
+Buildkite doesn't by default do clean checkouts. To enable clean checkouts modify the pre-checkout hook, `.buildkite/hooks/pre-checkout`:
+
+::
+    #!/bin/bash
+    set -euo pipefail
+
+    echo '--- :house_with_garden: Setting up pre-checkout'
+
+    export BUILDKITE_CLEAN_CHECKOUT="true"
+
 
 Set up
 ------
