@@ -1,18 +1,227 @@
-import argparse
+#!/usr/bin/env python3
+"""Dynamically generate Buildkite pipeline artifact based on git changes."""
+from fnmatch import fnmatch
+import logging
+import os
+import re
+import subprocess
+import sys
+from typing import List, Set, Union
 
-from buildpipe import pipeline, __version__
+from ruamel.yaml import YAML
+from ruamel.yaml.scanner import ScannerError
 
 
-def create_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--version', '-V', action='version', version=__version__)
-    parser.add_argument('--infile', '-i', default='buildpipe.yml', metavar='FILE', help='Configuration file')
-    parser.add_argument('--outfile', '-o', default='pipeline.yml', help='File for uploading to Buildkite')
-    parser.add_argument('--dry-run', action='store_true', help='Validate infile')
-    return parser
+PLUGIN_PREFIX = "BUILDIKE_PLUGIN_BUILDPIPE_"
+
+logging.basicConfig(format="%(levelname)s %(message)s")
+logger = logging.getLogger("buildpipe")
+log_level = os.getenv(f"{PLUGIN_PREFIX}LOG_LEVEL", "INFO")
+logger.setLevel(log_level)
+
+yaml = YAML(typ="safe")
+yaml.default_flow_style = False
+
+
+def listify(arg: Union[None, str, list]) -> list:
+    if not arg:
+        return []
+    elif isinstance(arg, str):
+        return [arg]
+    elif isinstance(arg, (list, tuple)):
+        return list(arg)
+    else:
+        raise ValueError(f"Argument is neither None, string nor list. Found {arg}.")
+
+
+def get_git_branch() -> str:
+    branch = os.getenv("BUILDKITE_BRANCH")
+    if not branch:
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                stdout=subprocess.PIPE,
+                check=True,
+            )
+            branch = result.stdout.decode("utf-8").strip()
+        except Exception as e:
+            logger.error("Error running command: %s", e)
+            sys.exit(-1)
+    return branch
+
+
+def get_changed_files() -> Set[str]:
+    branch = get_git_branch()
+    deploy_branch = os.getenv(f"{PLUGIN_PREFIX}DEPLOY_BRANCH", "master")
+    commit = os.getenv("BUILDKITE_COMMIT") or branch
+    if branch == deploy_branch:
+        command = f"git log -m -1 --name-only --pretty=format: {commit}"
+    else:
+        diff = os.getenv(f"{PLUGIN_PREFIX}DIFF")
+        if diff:
+            command = diff
+        else:
+            command = "git log --name-only --no-merges --pretty=format: origin..HEAD"
+
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+        changed = result.stdout.decode("utf-8").split("\n")
+    except Exception as e:
+        logger.error(e)
+        sys.exit(-1)
+
+    if branch == deploy_branch:
+        try:
+            first_merge_break = changed.index("")
+            changed = changed[:first_merge_break]
+        except ValueError:
+            pass
+
+    return {line for line in changed if line}
+
+
+def generate_project_steps(step: dict, projects: List[dict]) -> List[dict]:
+    return [
+        {
+            **step,
+            **{
+                "label": f'{step["label"]} {project["label"]}',
+                "env": {
+                    "BUILDPIPE_PROJECT_LABEL": project["label"],
+                    "BUILDPIPE_PROJECT_PATH": project["main_path"],
+                    # Make sure step envs aren't overridden
+                    **(step.get("env") or {}),
+                    # Add other environment variables specific to project
+                    **(project.get("env") or {}),
+                },
+            },
+        }
+        for project in projects
+        if check_project_rules(step, project)
+    ]
+
+
+def check_project_affected(project: dict, changed_files: Set[str]) -> bool:
+    for path in listify(project["path"]):
+        if path == ".":
+            return True
+        project_dirs = os.path.normpath(path).split("/")
+        for changed_file in changed_files:
+            changed_dirs = changed_file.split("/")
+            if changed_dirs[: len(project_dirs)] == project_dirs:
+                return True
+    return False
+
+
+def get_affected_projects(projects: List[dict]) -> List[dict]:
+    changed_files = get_changed_files()
+    return [
+        project
+        for project in projects
+        if check_project_affected(project, changed_files)
+    ]
+
+
+def check_project_rules(step: dict, project: dict) -> bool:
+    for pattern in project.get("exclude", []):
+        if fnmatch(step["label"], pattern):
+            return False
+
+    for pattern in project.get("include", []):
+        if fnmatch(step["label"], pattern):
+            return True
+
+    # Include is not empty and we did not match anything
+    if project.get("include"):
+        return False
+
+    return True
+
+
+def generate_pipeline(projects: List[dict], steps: dict) -> dict:
+    generated_steps = []
+    for step in steps:
+        if step.get("env", {}).get("BUILDPIPE_SCOPE") == "project":
+            generated_steps += generate_project_steps(step, projects)
+        else:
+            generated_steps += [step]
+
+    return {"steps": generated_steps}
+
+
+def load_steps() -> dict:
+    filename = os.environ[f"{PLUGIN_PREFIX}DYNAMIC_PIPELINE"]
+    try:
+        with open(filename, "r") as f:
+            steps = yaml.load(f)
+    except FileNotFoundError as e:
+        logger.error("Filename %s not found: %s", filename, e)
+        sys.exit(-1)
+    except ScannerError as e:
+        logger.error("Invalid YAML in file %s: %s", filename, e)
+        sys.exit(-1)
+    else:
+        return steps
+
+
+def write_pipline(pipeline: dict, filename: str) -> dict:
+    with open(filename, "w") as f:
+        yaml.dump(pipeline, f)
+
+
+def upload_pipeline(pipeline: dict):
+    out = yaml.dump(pipeline)
+    logger.debug(out)
+
+    try:
+        subprocess.run([f'echo "{out}" | buildkite-agent pipeline upload'], shell=True)
+    except subprocess.CalledProcessError as e:
+        logger.debug(e)
+        sys.exit(-1)
+
+
+def get_projects() -> List[dict]:
+    re_label = re.compile(f"{PLUGIN_PREFIX}PROJECTS_[0-9]*_LABEL")
+    project_labels = {k: v for k, v in os.environ.items() if re.search(re_label, k)}
+    projects = []
+
+    for key, label in project_labels.items():
+        logger.debug("Checking %s", key)
+
+        project = {}
+        project_number = key.replace(f"{PLUGIN_PREFIX}PROJECTS_", "").replace(
+            "_LABEL", ""
+        )
+        project["label"] = label
+
+        main_path = os.getenv(f"{PLUGIN_PREFIX}PROJECTS_{project_number}_PATH")
+        if main_path is not None:
+            project["main_path"] = main_path
+        else:
+            # path is an array so choose the first path as the main one
+            project["main_path"] = os.environ[
+                f"{PLUGIN_PREFIX}PROJECTS_{project_number}_PATH_0"
+            ]
+
+        for option in ["PATH", "INCLUDE", "EXCLUDE"]:
+            logger.debug("Checking %s", option)
+
+            re_option = re.compile(f"{PLUGIN_PREFIX}PROJECTS_{project_number}_{option}")
+
+            values = [v for k, v in os.environ.items() if re.search(re_option, k)]
+
+            logger.debug("Found patterns: (%s)", values)
+            project[option.lower()] = values
+        projects.append(project)
+    return projects
 
 
 def main():
-    parser = create_parser()
-    args = parser.parse_args()
-    pipeline.create_pipeline(**vars(args))
+    projects = get_projects()
+    affected_projects = get_affected_projects(projects)
+    if not affected_projects:
+        logger.info("No project was affected from changes")
+        sys.exit(0)
+    steps = load_steps()
+    pipeline = generate_pipeline(affected_projects, steps)
+    upload_pipeline(pipeline)

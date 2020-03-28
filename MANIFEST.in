@@ -1,4 +1,2 @@
-include LICENSE README.rst requirements.txt tox.ini
-prune examples*
-Lrecursive-include tests *
-recursive-exclude docs/_build *
+include LICENSE README.rst tox.ini
+recursive-include tests *
