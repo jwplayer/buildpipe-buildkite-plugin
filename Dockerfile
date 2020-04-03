@@ -9,4 +9,4 @@ WORKDIR "/buildkite"
 COPY setup.py ./
 RUN pip install --no-cache-dir -e .
 
-CMD ["buildpipe", "-i", "foo"]
+CMD ["python3", "buildpipe"]
