@@ -12,7 +12,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
 
 
-PLUGIN_PREFIX = "BUILDIKE_PLUGIN_BUILDPIPE_"
+PLUGIN_PREFIX = "BUILDKITE_PLUGIN_BUILDPIPE_"
 
 logging.basicConfig(format="%(levelname)s %(message)s")
 logger = logging.getLogger("buildpipe")
