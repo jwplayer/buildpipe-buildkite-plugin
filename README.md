@@ -116,22 +116,9 @@ Other useful things to note:
 `diff` command
 --------------
 
-The default `diff` commands are (run in the order shown):
-
-```bash
-# Used to check if on a feature branch and check diff against master
-git diff --name-only origin/master...HEAD
-
-# Useful for checking master against master in a merge commit strategy environment
-git diff --name-only HEAD HEAD~1
-```
-
-Both of the above commands are run, in their order listed above to
-detect if there is any `diff`.
-
 Depending on your [merge
 strategy](https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github),
-you might need to use different [diff]{.title-ref} commands.
+you might need to use different diff command.
 
 Buildpipe assumes you are using a merge strategy on the master branch.
 
