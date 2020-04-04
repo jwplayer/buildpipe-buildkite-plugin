@@ -15,13 +15,10 @@ clean-build:
 	rm -rf .pytest_cache
 	rm -rf *.egg-info
 
-lint: lint-plugin lint-python
+lint: lint-plugin
 
 lint-plugin:
 	docker-compose run --rm lint
-
-lint-python:
-	pytest --flake8 buildpipe tests
 
 test: test-unit test-plugin
 
