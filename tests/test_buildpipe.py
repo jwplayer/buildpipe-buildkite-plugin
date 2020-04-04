@@ -3,7 +3,9 @@ import os
 import textwrap
 from unittest import mock
 
-from buildpipe.__main__ import yaml, get_projects, generate_pipeline
+import pytest
+
+from buildpipe.__main__ import yaml, get_projects, generate_pipeline, get_affected_projects
 
 
 PROJECTS = yaml.load(
@@ -11,11 +13,13 @@ PROJECTS = yaml.load(
         """
   - label: project1
     main_path: project1/
-    path: project1/
+    path:
+      - project1/
   - label: project2
     main_path: project2/
     skip: deploy*
-    path: project2/
+    path:
+      - project2/
   - label: project3
     main_path: project3/
     skip:
@@ -26,7 +30,8 @@ PROJECTS = yaml.load(
       - project2/
   - label: project4
     main_path: project4/somedir/
-    path: project4/somedir/
+    path:
+      - project4/somedir/
 """
     )
 )
@@ -60,6 +65,21 @@ def test_get_projects():
             "skip": ["skip10", "skip11"],
         },
     ]
+
+
+@pytest.mark.parametrize('changed_files, expected', [
+    (['project1/app.py'], {'project1'}),
+    (['project1/test/foo.py'], {'project1'}),
+    (['project2/foo.py'], {'project2', 'project3'}),
+    (['project4/foo.py'], set()),
+    (['project4/somedir/foo.py'], {'project4'}),
+    (['app.py'], set()),
+])
+@mock.patch('buildpipe.__main__.get_changed_files')
+def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
+    mock_get_changed_files.return_value = changed_files
+    projects = get_affected_projects(PROJECTS)
+    assert set(p['label'] for p in projects) == expected
 
 
 def test_generate_pipeline():
