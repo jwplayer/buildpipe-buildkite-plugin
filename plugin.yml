@@ -1,0 +1,26 @@
+name: Buildpipe
+description: Dynamically generate Buildkite pipelines based on project changes
+author: https://github.com/ksindi
+requirements:
+  - docker
+configuration:
+  properties:
+    diff:
+      type: string
+    dynamic_pipeline:
+      type: string
+    log_level:
+      type: string
+    projects:
+      type: [ array ]
+      minimum: 1
+      properties:
+        label:
+          type: string
+        path:
+          type: [ string, array ]
+        skip:
+          type: [ string, array ]
+  required:
+    - dynamic_pipeline
+    - projects

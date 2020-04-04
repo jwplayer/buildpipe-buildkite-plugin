@@ -1,216 +1,162 @@
 Buildpipe
 =========
 
-.. image:: https://travis-ci.org/jwplayer/buildpipe.svg?branch=master
-    :target: https://travis-ci.org/jwplayer/buildpipe
-    :alt: Build Status
-
-.. image:: https://readthedocs.org/projects/buildpipe/badge/?version=latest
-    :target: http://buildpipe.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-
-.. image:: https://img.shields.io/pypi/v/buildpipe.svg
-    :target: https://pypi.python.org/pypi/buildpipe
-    :alt: PyPI Version
-
-
-Buildpipe allows you to dynamically generate your Buildkite pipelines so that you can:
-
-- Manage continuous deployment logic such as only deploying during business hours
-- Maintain monorepos by only looking at git changes in specified projects from the history you want to include
-- Specify dependencies between projects so that their steps are concurrent
-
-Install
--------
-
-.. code-block:: bash
-
-    pip install buildpipe
+A Buildkite plugin to dynamically generate pipelines. Especially useful for monorepos.
 
 
 Example
 -------
 
-Note: For a complete working example see `Buildkite Monorepo Example
-<https://github.com/ksindi/buildpipe-monorepo-example>`_.
-
-
-.. code-block:: yaml
-
-    # trigger deploy steps on master during business hours
-    deploy:
-      branch: master
-      timezone: US/Eastern
-      allowed_hours_regex: '9|1[0-7]'
-      allowed_weekdays_regex: '[1-5]'
-      blacklist_dates:
-        - '01-01'
-        - '12-31'
-    # ignore certain files from triggering steps with fnmatch
-    ignore:
-      - '*.md'
-      - 'pyproject/*.ini'
-    stairs:
-      - name: test
-        scope: project
-        buildkite:
-          command:
-            - cd $$BUILDPIPE_PROJECT_PATH
-            - make test
-      - name: build
-        scope: project
-        emoji: ":docker:"
-        tags:
-          - docker-only
-        buildkite:
-          agents:
-            - queue=build
-          branches: master
-          command:
-            - make build
-            - make publish-image
-      - name: tag
-        scope: stair
-        emoji: ":github:"
-        buildkite:
-          branches: master
-          command: make tag
-      - name: deploy-staging
-        scope: project
-        emoji: ":shipit:"
-        deploy: true
-        buildkite:
-          branches: master
-          command:
-            - cd $$BUILDPIPE_PROJECT_PATH
-            - make deploy-staging
-      - name: deploy-prod
-        scope: project
-        emoji: ":shipit:"
-        deploy: true
-        buildkite:
-          branches: master
-          command:
-            - cd $$BUILDPIPE_PROJECT_PATH
-            - make deploy-prod
-    projects:
-      - name: pyproject
-        path: pyproject
-        emoji: ":python:"
-        tags:
-          - docker-only
-        dependencies:
-          - jsproject
-      - name: jsproject
-        path: jsproject
-        emoji: ":javascript:"
-        skip:
-          - deploy-staging
-
-The above buildpipe config file specifies the following:
-
-- There are two projects to track in the repo: jsproject and pyproject.
-- A stair is a group of steps. It can have a scope of "project" or "stair". Scope "project" creates a step for each project changed while scope "stair" creates only one step.
-- You can also limit a stair's scope using tag rules. For example, pyproject has tag "docker-only" and so will include the build step; but jsproject won't have that step.
-- Any git file changes that are subpaths of either project's path will trigger steps for each project.
-- In addition, pyproject has path jsproject as a dependency: any changes in jsproject will trigger steps for pyproject to be included in the pipeline. Note dependencies are paths and not projects.
-- Stairs with "deploy: true" will only trigger in master branch between 9am and 5pm ET during weekdays that are not New Year's Eve or Day.
-- Project jsproject will never create step deploy-staging.
-- Files ending with .md or .ini files under pyproject will be ignore from triggering deploy steps.
-
-In the above config, if only files under `pyproject` were touched and the merge happened during business hours, then buildpipe would create the following steps:
+initial_pipeline.yml
+********************
 
 .. code-block:: yaml
 
     steps:
-      - wait
-      - command:
-        - cd $$BUILDPIPE_PROJECT_PATH
-        - make test
-        env:
-          BUILDPIPE_PROJECT_NAME: pyproject
-          BUILDPIPE_PROJECT_PATH: pyproject
-          BUILDPIPE_STAIR_NAME: test
-          BUILDPIPE_STAIR_SCOPE: project
-        label: 'test pyproject :python:'
-      - wait
-      - agents:
-        - queue=build
-        branches: master
-        command:
-        - cd $$BUILDPIPE_PROJECT_PATH
-        - make build
-        - make publish-image
-        env:
-          BUILDPIPE_PROJECT_NAME: pyproject
-          BUILDPIPE_PROJECT_PATH: pyproject
-          BUILDPIPE_STAIR_NAME: build
-          BUILDPIPE_STAIR_SCOPE: project
-        label: 'build pyproject :docker:'
-      - wait
-      - branches: master
-        command: make tag
-        env:
-          BUILDPIPE_STAIR_NAME: tag
-          BUILDPIPE_STAIR_SCOPE: stair
-        label: 'tag :github:'
-      - wait
-      - branches: master
-        command:
-        - cd $$BUILDPIPE_PROJECT_PATH
-        - make deploy-staging
-        concurrency: 1
-        concurrency_group: deploy-staging-pyproject
-        env:
-          BUILDPIPE_PROJECT_NAME: pyproject
-          BUILDPIPE_PROJECT_PATH: pyproject
-          BUILDPIPE_STAIR_NAME: deploy-staging
-          BUILDPIPE_STAIR_SCOPE: project
-        label: 'deploy-staging pyproject :shipit:'
-      - wait
-      - branches: master
-        command:
-        - cd $$BUILDPIPE_PROJECT_PATH
-        - make deploy-prod
-        concurrency: 1
-        concurrency_group: deploy-prod-pyproject
-        env:
-          BUILDPIPE_PROJECT_NAME: pyproject
-          BUILDPIPE_PROJECT_PATH: pyproject
-          BUILDPIPE_STAIR_NAME: deploy-prod
-          BUILDPIPE_STAIR_SCOPE: project
-        label: 'deploy-prod pyproject :shipit:'
+      - label: ":pipeline:"
+        plugins:
+          - jwplayer/buildpipe#v0.7.0:
+              dynamic_pipeline: dynamic_pipeline.yml
+              projects:
+               - label: project1
+                 path: project1/  # changes in this dir will trigger steps for project1
+               - label: project2
+                 skip: deploy*  # skip steps with label deploy* (e.g. deploy-prd)
+                 path: project2/
+               - label: project3
+                 skip:
+                   - test
+                   - build
+                 path:
+                   - project3/
+                   - project2/somedir/  # project3 steps will also be trigger by changes in this dir
 
 
-Additional Features
--------------------
+dynamic_pipeline.yml
+********************
 
 .. code-block:: yaml
 
-    # Only check the last commit for new changes
-    last_commit_only: true
+      steps:
+        - label: test
+          env:
+            BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
+          command:
+            - cd $$BUILDPIPE_PROJECT_PATH
+            - make test
+        - wait
+        - label: build
+          branches: "master"
+          env:
+            BUILDPIPE_SCOPE: project
+          command:
+            - cd $$BUILDPIPE_PROJECT_PATH
+            - make build
+            - make publish-image
+          agents:
+            - queue=build
+        - wait
+        - label: tag
+          branches: "master"
+          command:
+            - make tag-release
+        - wait
+        - label: deploy-staging
+          branches: "master"
+          env:
+            BUILDPIPE_SCOPE: project
+          command:
+            - cd $$BUILDPIPE_PROJECT_PATH
+            - make deploy-staging
+        - wait
+        - block: ":rocket: Release!"
+        - wait
+        - label: deploy-prod
+          branches: "master"
+          env:
+            BUILDPIPE_SCOPE: project
+          command:
+            - cd $$BUILDPIPE_PROJECT_PATH
+            - make deploy-prod
 
-    # trigger deploy steps on master during business hours
-    deploy:
-      branch: master
-      timezone: US/Eastern
-    .
-    .
-    .
 
-The :code:`last_commit_only` flag allows you to choose between change detection in the whole history or only in the last commit that happened.
-This feature is only applied if the current branch is **not** the defined :code:`deploy` branch, which by default is `master`.
+The above pipelines specify the following:
+
+- There are three projects to track in the repository.
+- The env variable ``BUILDPIPE_SCOPE: project`` tells buildpipe to generate a step for each project if that project changed.
+- The ``skip`` option will skip any step label matching ``deploy*``.
+- The env variable ``BUILDPIPE_PROJECT_PATH`` is created by buildpipe as the project's path. If multiple paths are specified for a project, it's the first path.
+
+
+Configuration
+-------------
+
+Plugin
+******
+
++------------------+----------+---------+---------+-----------------------------------------------------------------------------------------------------------------+
+| Option           | Required | Type    | Default | Description                                                                                                     |
++==================+==========+=========+=========+=================================================================================================================+
+| dynamic_pipeline | Yes      | string  |         | The name including the path to the pipeline that contains all the actual `steps`                                |
++------------------+----------+---------+---------+-----------------------------------------------------------------------------------------------------------------+
+| diff             | No       | string  |         | Can be used to override the default commands (see below for a better explanation of the defaults)               |
++------------------+----------+---------+---------+-----------------------------------------------------------------------------------------------------------------+
+| log_level        | No       | string  | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
++------------------+----------+---------+---------+-----------------------------------------------------------------------------------------------------------------+
+| projects         | Yes      | array   |         | List of projects that buildpipe will run steps for                                                              |
++------------------+----------+---------+---------+-----------------------------------------------------------------------------------------------------------------+
+
+
+Project
+*******
+
++------------------+----------+---------+---------+---------------------------------------------------------+
+| Option           | Required | Type    | Default | Description                                             |
++==================+==========+=========+=========+=========================================================+
+| label            | Yes      | string  |         | Project label                                           |
++------------------+----------+---------+---------+---------------------------------------------------------+
+| path             | Yes      | array   |         | The path(s) that specify changes to a project           |
++------------------+----------+---------+---------+---------------------------------------------------------+
+| skip             | No       | array   |         | Exclude steps that have labels that match the rule      |
++------------------+----------+---------+---------+---------------------------------------------------------+
+
+
+Other useful things to note:
+
+- Option ``skip`` make use of Unix shell-style wildcards (Look at .gitignore files for inspiration)
+- If multiple paths are specified, the environment variable ``BUILDPIPE_PROJECT_PATH`` will be the first path.
+
+
+``diff`` command
+----------------
+
+The default ``diff`` commands are (run in the order shown):
+
+.. code-block::
+
+    # Used to check if on a feature branch and check diff against master
+    git diff --name-only origin/master...HEAD
+
+    # Useful for checking master against master in a merge commit strategy environment
+    git diff --name-only HEAD HEAD~1
+
+
+Both of the above commands are run, in their order listed above to detect if there is any ``diff``.
+
+Depending on your `merge strategy <https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github>`_, you might need to use different `diff` commands.
+
+Buildpipe assumes you are using a merge strategy on the master branch.
 
 Troubleshooting
 ---------------
 
-Buildpipe is showing projects as changed when they're not
-*********************************************************
+Buildpipe is incorrectly showing project as changed
+***************************************************
 
 Buildkite doesn't by default do clean checkouts. To enable clean checkouts set the ``BUILDKITE_CLEAN_CHECKOUT`` `environment variable
 <https://buildkite.com/docs/pipelines/environment-variables>`_. An example is to modify the pre-checkout hook, ``.buildkite/hooks/pre-checkout``:
 
-.. code-block:: 
+.. code-block::
 
     #!/bin/bash
     set -euo pipefail
@@ -218,17 +164,6 @@ Buildkite doesn't by default do clean checkouts. To enable clean checkouts set t
     echo '--- :house_with_garden: Setting up pre-checkout'
 
     export BUILDKITE_CLEAN_CHECKOUT="true"
-
-
-Set up
-------
-
-In the Buildkite pipeline settings UI you just have to add the following in "Commands to run":
-
-.. code-block:: bash
-
-    buildpipe -i path/to/buildpipe.yml -o pipeline.yml
-    buildkite-agent pipeline upload pipeline.yml
 
 
 Testing
@@ -243,3 +178,9 @@ License
 -------
 
 MIT
+
+
+Acknowledgement
+---------------
+
+The rewrite to a plugin was inspired by `git-diff-conditional-buildkite-plugin <https://github.com/Zegocover/git-diff-conditional-buildkite-plugin>`_.
