@@ -24,8 +24,9 @@ setup() {
   export BUILDKITE_PLUGIN_BUILDPIPE_PROJECTS_0_PATH="path0"
   export BUILDKITE_PLUGIN_BUILDPIPE_LOG_LEVEL="DEBUG"
 
-  result="$(git rev-parse --abbrev-ref HEAD)"
-  [ "$result" == 'I am stubbed!' ]
+  stub git "log abc123 : echo 'foo'"
+  result="$(run git log abc123)"
+  [ "$result" == 'foo' ]
 
   run python3 "$PWD/buildpipe"
 

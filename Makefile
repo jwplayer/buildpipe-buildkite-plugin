@@ -1,4 +1,4 @@
-.PHONY: clean install install-all version
+.PHONY: clean test version
 
 help:
 	@echo "clean - remove artifacts"
@@ -11,19 +11,14 @@ clean-build:
 	rm -rf dist/
 	find . -type d -name __pycache__ -exec rm -r {} \+
 	rm -rf .eggs
+	rm -rf .coverage
 	rm -rf .pytest_cache
 	rm -rf *.egg-info
-
-install: clean-build
-	python setup.py install
-
-install-all:
-	pip install -e .[all]
 
 lint: lint-plugin lint-python
 
 lint-plugin:
-	docker-compose run --rm linter
+	docker-compose run --rm lint
 
 lint-python:
 	pytest --flake8 buildpipe tests
