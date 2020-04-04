@@ -1,0 +1,11 @@
+steps:
+  - label: test
+    env:
+      BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
+    command:
+      - cd $$BUILDPIPE_PROJECT_PATH
+      - make test
+  - wait
+  - label: tag
+    command:
+      - make tag

@@ -1,2 +1,2 @@
-include LICENSE README.rst tox.ini
+include LICENSE README.md tox.ini requirements.txt
 recursive-include tests *

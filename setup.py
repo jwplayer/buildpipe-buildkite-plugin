@@ -3,8 +3,11 @@ import textwrap
 
 from setuptools import setup, find_packages
 
-with open("README.rst") as f_readme:
+with open("README.md") as f_readme:
     readme = f_readme.read()
+
+with open("requirements.txt") as f:
+    install_requires = f.read().splitlines()
 
 setup(
     name="buildpipe",
@@ -15,10 +18,10 @@ setup(
     author="Kamil Sindi",
     author_email="kamil@jwplayer.com",
     url="https://github.com/jwplayer/buildpipe",
-    keywords="pipeline buildkite buildkie-plugin cicd".split(),
+    keywords="pipeline buildkite buildkite-plugin cicd".split(),
     license="MIT",
-    install_requires=["ruamel.yaml>=0.16.10",],
-    setup_requires=["pytest-runner", "setuptools_scm", "sphinx_rtd_theme",],
+    install_requires=install_requires,
+    setup_requires=["pytest-runner", "setuptools_scm",],
     tests_require=["pytest", "pytest-cov", "pytest-flake8",],
     include_package_data=True,
     zip_safe=False,

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Dynamically generate Buildkite pipeline artifact based on git changes."""
 from fnmatch import fnmatch
+import io
 import logging
 import os
 import re
@@ -24,14 +25,18 @@ yaml.default_flow_style = False
 yaml.representer.ignore_aliases = lambda *data: True
 
 
+def dump_to_string(d):
+    with io.StringIO() as buf:
+        yaml.dump(d, buf)
+        return buf.getvalue()
+
+
 def get_git_branch() -> str:
     branch = os.getenv("BUILDKITE_BRANCH")
     if not branch:
         try:
             result = subprocess.run(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                stdout=subprocess.PIPE,
-                check=True,
+                "git rev-parse --abbrev-ref HEAD", stdout=subprocess.PIPE, shell=True,
             )
             branch = result.stdout.decode("utf-8").strip()
         except Exception as e:
@@ -42,6 +47,7 @@ def get_git_branch() -> str:
 
 def get_changed_files() -> Set[str]:
     branch = get_git_branch()
+    logger.debug("Current branch: %s", branch)
     deploy_branch = os.getenv(f"{PLUGIN_PREFIX}DEPLOY_BRANCH", "master")
     commit = os.getenv("BUILDKITE_COMMIT") or branch
     if branch == deploy_branch:
@@ -122,7 +128,7 @@ def check_project_rules(step: dict, project: dict) -> bool:
 def generate_pipeline(steps: dict, projects: List[dict]) -> dict:
     generated_steps = []
     for step in steps:
-        if step.get("env", {}).get("BUILDPIPE_SCOPE") == "project":
+        if "env" in step and step.get("env", {}).get("BUILDPIPE_SCOPE") == "project":
             generated_steps += generate_project_steps(step, projects)
         else:
             generated_steps += [step]
@@ -134,7 +140,7 @@ def load_steps() -> dict:
     filename = os.environ[f"{PLUGIN_PREFIX}DYNAMIC_PIPELINE"]
     try:
         with open(filename, "r") as f:
-            steps = yaml.load(f)
+            pipeline = yaml.load(f)
     except FileNotFoundError as e:
         logger.error("Filename %s not found: %s", filename, e)
         sys.exit(-1)
@@ -142,12 +148,12 @@ def load_steps() -> dict:
         logger.error("Invalid YAML in file %s: %s", filename, e)
         sys.exit(-1)
     else:
-        return steps
+        return pipeline["steps"]
 
 
 def upload_pipeline(pipeline: dict):
-    out = yaml.dump(pipeline)
-    logger.debug(out)
+    out = dump_to_string(pipeline)
+    logger.debug("Pipeline:\n%s", out)
 
     try:
         subprocess.run([f'echo "{out}" | buildkite-agent pipeline upload'], shell=True)
@@ -193,7 +199,7 @@ def get_projects() -> List[dict]:
     return projects
 
 
-def main():
+if __name__ == "__main__":
     projects = get_projects()
     affected_projects = get_affected_projects(projects)
     if not affected_projects:
