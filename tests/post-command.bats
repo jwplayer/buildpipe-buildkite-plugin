@@ -10,6 +10,7 @@ setup() {
 
 teardown() {
   unstub git
+  # TODO: fix not being able to unstub
   # unstub buildkite-agent
 }
 

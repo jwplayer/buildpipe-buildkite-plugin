@@ -27,7 +27,7 @@ steps:
                - build
              path:
                - project3/
-               - project2/somedir/  # project3 steps will also be trigger by changes in this dir
+               - project2/somedir/  # project3 steps will also be triggered by changes in this dir
 ```
 
 ### dynamic\_pipeline.yml
@@ -166,8 +166,8 @@ License
 
 MIT
 
-Acknowledgement
----------------
+Acknowledgements
+----------------
 
-The rewrite to a plugin was inspired by
+The rewrite to a plugin from a CLI was inspired by
 [git-diff-conditional-buildkite-plugin](https://github.com/Zegocover/git-diff-conditional-buildkite-plugin).

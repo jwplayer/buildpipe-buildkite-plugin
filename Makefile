@@ -18,7 +18,7 @@ clean-build:
 lint: lint-plugin
 
 lint-plugin:
-	docker-compose run --rm lint
+	docker-compose run --rm buildkite_plugin_linter
 
 test: test-unit test-plugin
 
@@ -26,7 +26,7 @@ test-unit:
 	python setup.py test
 
 test-plugin:
-	docker-compose up --build tests
+	docker-compose up --build buildkite_plugin_tester
 
 version:
 	python setup.py --version
