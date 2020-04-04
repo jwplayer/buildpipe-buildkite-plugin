@@ -3,9 +3,6 @@ max-line-length=120
 exclude=
     .git,
     __pycache__,
-    docs/conf.py,
-    examples,
-    old,
     build,
     dist,
     setup.py

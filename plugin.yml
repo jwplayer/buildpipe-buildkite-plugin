@@ -19,9 +19,7 @@ configuration:
           type: string
         path:
           type: [ string, array ]
-        include:
-          type: [ string, array ]
-        exclude:
+        skip:
           type: [ string, array ]
   required:
     - dynamic_pipeline

@@ -6,7 +6,7 @@ import os
 import re
 import subprocess
 import sys
-from typing import List, Set, Union
+from typing import List, Set
 
 from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
@@ -21,17 +21,7 @@ logger.setLevel(log_level)
 
 yaml = YAML(typ="safe")
 yaml.default_flow_style = False
-
-
-def listify(arg: Union[None, str, list]) -> list:
-    if not arg:
-        return []
-    elif isinstance(arg, str):
-        return [arg]
-    elif isinstance(arg, (list, tuple)):
-        return list(arg)
-    else:
-        raise ValueError(f"Argument is neither None, string nor list. Found {arg}.")
+yaml.representer.ignore_aliases = lambda *data: True
 
 
 def get_git_branch() -> str:
@@ -91,8 +81,6 @@ def generate_project_steps(step: dict, projects: List[dict]) -> List[dict]:
                     "BUILDPIPE_PROJECT_PATH": project["main_path"],
                     # Make sure step envs aren't overridden
                     **(step.get("env") or {}),
-                    # Add other environment variables specific to project
-                    **(project.get("env") or {}),
                 },
             },
         }
@@ -102,7 +90,7 @@ def generate_project_steps(step: dict, projects: List[dict]) -> List[dict]:
 
 
 def check_project_affected(project: dict, changed_files: Set[str]) -> bool:
-    for path in listify(project["path"]):
+    for path in project["path"]:
         if path == ".":
             return True
         project_dirs = os.path.normpath(path).split("/")
@@ -110,6 +98,7 @@ def check_project_affected(project: dict, changed_files: Set[str]) -> bool:
             changed_dirs = changed_file.split("/")
             if changed_dirs[: len(project_dirs)] == project_dirs:
                 return True
+
     return False
 
 
@@ -123,22 +112,14 @@ def get_affected_projects(projects: List[dict]) -> List[dict]:
 
 
 def check_project_rules(step: dict, project: dict) -> bool:
-    for pattern in project.get("exclude", []):
+    for pattern in project.get("skip", []):
         if fnmatch(step["label"], pattern):
             return False
-
-    for pattern in project.get("include", []):
-        if fnmatch(step["label"], pattern):
-            return True
-
-    # Include is not empty and we did not match anything
-    if project.get("include"):
-        return False
 
     return True
 
 
-def generate_pipeline(projects: List[dict], steps: dict) -> dict:
+def generate_pipeline(steps: dict, projects: List[dict]) -> dict:
     generated_steps = []
     for step in steps:
         if step.get("env", {}).get("BUILDPIPE_SCOPE") == "project":
@@ -162,11 +143,6 @@ def load_steps() -> dict:
         sys.exit(-1)
     else:
         return steps
-
-
-def write_pipline(pipeline: dict, filename: str) -> dict:
-    with open(filename, "w") as f:
-        yaml.dump(pipeline, f)
 
 
 def upload_pipeline(pipeline: dict):
@@ -203,7 +179,7 @@ def get_projects() -> List[dict]:
                 f"{PLUGIN_PREFIX}PROJECTS_{project_number}_PATH_0"
             ]
 
-        for option in ["PATH", "INCLUDE", "EXCLUDE"]:
+        for option in ["PATH", "SKIP"]:
             logger.debug("Checking %s", option)
 
             re_option = re.compile(f"{PLUGIN_PREFIX}PROJECTS_{project_number}_{option}")
@@ -213,6 +189,7 @@ def get_projects() -> List[dict]:
             logger.debug("Found patterns: (%s)", values)
             project[option.lower()] = values
         projects.append(project)
+
     return projects
 
 
@@ -223,5 +200,5 @@ def main():
         logger.info("No project was affected from changes")
         sys.exit(0)
     steps = load_steps()
-    pipeline = generate_pipeline(affected_projects, steps)
+    pipeline = generate_pipeline(steps, affected_projects)
     upload_pipeline(pipeline)

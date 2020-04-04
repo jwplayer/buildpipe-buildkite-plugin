@@ -13,18 +13,23 @@ initial_pipeline.yml
 .. code-block:: yaml
 
     steps:
-      - label: ":pipeline: Creating pipeline"
+      - label: ":pipeline:"
         plugins:
           - jwplayer/buildpipe#v0.5.0:
               dynamic_pipeline: dynamic_pipeline.yml
               projects:
-                - label: project1
-                  path: project1
-                  exclude: deploy-prod
-                - label: project2
-                  path:
-                    - project2
-                    - project1/dir/
+               - label: project1
+                 path: project1/  # changes in this dir will trigger steps for project1
+               - label: project2
+                 skip: deploy*  # skip steps with label deploy* (e.g. deploy-prd)
+                 path: project2/
+               - label: project3
+                 skip:
+                   - test
+                   - build
+                 path:
+                   - project3/
+                   - project2/somedir/  # project3 steps will also be trigger by changes in this dir
 
 
 dynamic_pipeline.yml
@@ -35,7 +40,7 @@ dynamic_pipeline.yml
       steps:
         - label: test
           env:
-            BUILDPIPE_SCOPE: project
+            BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
           command:
             - cd $$BUILDPIPE_PROJECT_PATH
             - make test
@@ -77,9 +82,9 @@ dynamic_pipeline.yml
 
 The above pipelines specify the following:
 
-- There are two projects to track in the repository.
+- There are three projects to track in the repository.
 - The env variable ``BUILDPIPE_SCOPE: project`` tells buildpipe to generate a step for each project if that project changed.
-- The ``exclude`` key will exclude any step label matching ``deploy*``.
+- The ``skip`` option will skip any step label matching ``deploy*``.
 - The env variable ``BUILDPIPE_PROJECT_PATH`` is created by buildpipe as the project's path. If multiple paths are specified for a project, it's the first path.
 
 
@@ -112,15 +117,13 @@ Project
 +------------------+----------+---------+---------+---------------------------------------------------------+
 | path             | Yes      | array   |         | The path(s) that specify changes to a project           |
 +------------------+----------+---------+---------+---------------------------------------------------------+
-| include          | No       | array   |         | Only include steps that have labels that match the rule |
-+------------------+----------+---------+---------+---------------------------------------------------------+
-| exclude          | No       | array   |         | Exclude steps that have labels that match the rule      |
+| skip             | No       | array   |         | Exclude steps that have labels that match the rule      |
 +------------------+----------+---------+---------+---------------------------------------------------------+
 
 
 Other useful things to note:
 
-- Both ``include`` and ``exclude`` make use of Unix shell-style wildcards (Look at .gitignore files for inspiration)
+- Option ``skip`` make use of Unix shell-style wildcards (Look at .gitignore files for inspiration)
 - If multiple paths are specified, the environment variable ``BUILDPIPE_PROJECT_PATH`` will be the first path.
 
 
