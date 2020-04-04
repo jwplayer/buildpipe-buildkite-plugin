@@ -5,3 +5,7 @@ steps:
     command:
       - cd $$BUILDPIPE_PROJECT_PATH
       - make test
+  - wait
+  - label: tag
+    command:
+      - make tag

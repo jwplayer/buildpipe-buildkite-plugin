@@ -5,7 +5,13 @@ from unittest import mock
 
 import pytest
 
-from buildpipe.__main__ import yaml, get_projects, generate_pipeline, get_affected_projects
+from buildpipe.__main__ import (
+    yaml,
+    get_projects,
+    generate_pipeline,
+    get_affected_projects,
+    dump_to_string,
+)
 
 
 PROJECTS = yaml.load(
@@ -37,12 +43,6 @@ PROJECTS = yaml.load(
 )
 
 
-def dump_to_string(d):
-    with io.StringIO() as buf:
-        yaml.dump(d, buf)
-        return buf.getvalue()
-
-
 @mock.patch.dict(
     os.environ,
     {
@@ -67,19 +67,22 @@ def test_get_projects():
     ]
 
 
-@pytest.mark.parametrize('changed_files, expected', [
-    (['project1/app.py'], {'project1'}),
-    (['project1/test/foo.py'], {'project1'}),
-    (['project2/foo.py'], {'project2', 'project3'}),
-    (['project4/foo.py'], set()),
-    (['project4/somedir/foo.py'], {'project4'}),
-    (['app.py'], set()),
-])
-@mock.patch('buildpipe.__main__.get_changed_files')
+@pytest.mark.parametrize(
+    "changed_files, expected",
+    [
+        (["project1/app.py"], {"project1"}),
+        (["project1/test/foo.py"], {"project1"}),
+        (["project2/foo.py"], {"project2", "project3"}),
+        (["project4/foo.py"], set()),
+        (["project4/somedir/foo.py"], {"project4"}),
+        (["app.py"], set()),
+    ],
+)
+@mock.patch("buildpipe.__main__.get_changed_files")
 def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
     mock_get_changed_files.return_value = changed_files
     projects = get_affected_projects(PROJECTS)
-    assert set(p['label'] for p in projects) == expected
+    assert set(p["label"] for p in projects) == expected
 
 
 def test_generate_pipeline():
