@@ -2,14 +2,16 @@
 
 help:
 	@echo "clean - remove artifacts"
-	@echo "test - run tests quickly with the default Python"
-	@echo "test-all - run tests on every Python version with tox"
+	@echo "test - run unit test and test buildkite plugin"
 
 clean: clean-build
 
 clean-build:
 	rm -rf build/
 	rm -rf dist/
+	find . -type d -name __pycache__ -exec rm -r {} \+
+	rm -rf .eggs
+	rm -rf .pytest_cache
 	rm -rf *.egg-info
 
 install: clean-build
@@ -18,14 +20,21 @@ install: clean-build
 install-all:
 	pip install -e .[all]
 
-lint:
+lint: lint-plugin lint-python
+
+lint-plugin:
+	docker-compose run --rm linter
+
+lint-python:
 	pytest --flake8 buildpipe tests
 
-test:
+test: test-unit test-plugin
+
+test-unit:
 	python setup.py test
 
-test-all:
-	tox
+test-plugin:
+	docker-compose up --build tests
 
 version:
 	python setup.py --version

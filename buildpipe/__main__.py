@@ -29,9 +29,9 @@ def get_git_branch() -> str:
     if not branch:
         try:
             result = subprocess.run(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                "git rev-parse --abbrev-ref HEAD",
                 stdout=subprocess.PIPE,
-                check=True,
+                shell=True,
             )
             branch = result.stdout.decode("utf-8").strip()
         except Exception as e:
@@ -193,7 +193,8 @@ def get_projects() -> List[dict]:
     return projects
 
 
-def main():
+if __name__ == "__main__":
+    logger.info("foo")
     projects = get_projects()
     affected_projects = get_affected_projects(projects)
     if not affected_projects:

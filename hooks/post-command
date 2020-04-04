@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Cleaning up plugin-cache"
+
+rm -rf .buildpipe
