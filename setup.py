@@ -3,7 +3,7 @@ import textwrap
 
 from setuptools import setup, find_packages
 
-with open("README.rst") as f_readme:
+with open("README.md") as f_readme:
     readme = f_readme.read()
 
 with open("requirements.txt") as f:

@@ -9,7 +9,7 @@ Example
 
 ### initial\_pipeline.yml
 
-``` {.sourceCode .yaml}
+```yaml
 steps:
   - label: ":pipeline:"
     plugins:
@@ -32,7 +32,7 @@ steps:
 
 ### dynamic\_pipeline.yml
 
-``` {.sourceCode .yaml}
+```yaml
 steps:
   - label: test
     env:
@@ -91,36 +91,20 @@ Configuration
 
 ### Plugin
 
-  ---------------------------------------------------------------------------------------------------
-  Option              Required   Type     Default   Description
-  ------------------- ---------- -------- --------- -------------------------------------------------
-  dynamic\_pipeline   Yes        string             The name including the path to the pipeline that
-                                                    contains all the actual [steps]{.title-ref}
-
-  diff                No         string             Can be used to override the default commands (see
-                                                    below for a better explanation of the defaults)
-
-  log\_level          No         string   INFO      The Level of logging to be used by the python
-                                                    script underneath; pass DEBUG for verbose logging
-                                                    if errors occur
-
-  projects            Yes        array              List of projects that buildpipe will run steps
-                                                    for
-  ---------------------------------------------------------------------------------------------------
+| Option            | Required | Type   | Default | Description
+| ----------------- | -------- | ------ | ------- | -------------------------------------------------- |
+| dynamic\_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
+| diff              | No       | string |         | Can be used to override the default commands (see below for a better explanation of the defaults) |
+| log\_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
+| projects          | Yes      |  array |         | List of projects that buildpipe will run steps for |
 
 ### Project
 
-  ---------------------------------------------------------------------------------
-  Option       Required   Type     Default   Description
-  ------------ ---------- -------- --------- --------------------------------------
-  label        Yes        string             Project label
-
-  path         Yes        array              The path(s) that specify changes to a
-                                             project
-
-  skip         No         array              Exclude steps that have labels that
-                                             match the rule
-  ---------------------------------------------------------------------------------
+| Option | Required | Type   | Default | Description                           |
+| ------ | -------- | ------ | ------- | ------------------------------------- |
+| label  | Yes      | string |         | Project label                         |
+| path   | Yes      | array  |         | The path(s) that specify changes to a project |
+| skip   | No       | array  |         | Exclude steps that have labels that match the rule |
 
 Other useful things to note:
 
@@ -134,7 +118,7 @@ Other useful things to note:
 
 The default `diff` commands are (run in the order shown):
 
-``` {.sourceCode .}
+```bash
 # Used to check if on a feature branch and check diff against master
 git diff --name-only origin/master...HEAD
 
@@ -161,7 +145,7 @@ checkouts set the `BUILDKITE_CLEAN_CHECKOUT` [environment variable](https://buil
 example is to modify the pre-checkout hook,
 `.buildkite/hooks/pre-checkout`:
 
-``` {.sourceCode .}
+```bash
 #!/bin/bash
 set -euo pipefail
 
@@ -173,7 +157,7 @@ export BUILDKITE_CLEAN_CHECKOUT="true"
 Testing
 -------
 
-``` {.sourceCode .bash}
+```bash
 make test
 ```
 
