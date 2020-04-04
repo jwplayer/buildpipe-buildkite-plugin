@@ -25,6 +25,8 @@ teardown() {
   export BUILDKITE_PLUGIN_BUILDPIPE_LOG_LEVEL="DEBUG"
   export BUILDKITE_BRANCH="not_master"
 
+  # TODO: figure out to use hooks/command
+  # run hooks/command
   run python3 "$PWD/buildpipe"
 
   assert_success

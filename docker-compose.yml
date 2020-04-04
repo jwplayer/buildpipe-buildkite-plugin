@@ -6,6 +6,7 @@ services:
       dockerfile: tests/Dockerfile
     volumes:
       - ".:/plugin:ro"
+      - /var/run/docker.sock:/var/run/docker.sock
   buildkite_plugin_linter:
     image: buildkite/plugin-linter
     command: ['--id', 'jwplayer/buildpipe']
