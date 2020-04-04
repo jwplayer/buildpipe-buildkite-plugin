@@ -5,4 +5,4 @@ basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 
 docker build $basedir -t buildpipe > /dev/null
 
-docker run --rm --env-file <(env | grep BUILDKITE) buildpipe
+docker run --rm -v "$PWD:/buildkite" --env-file <(env | grep BUILDKITE) buildpipe
