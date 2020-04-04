@@ -15,7 +15,7 @@ initial_pipeline.yml
     steps:
       - label: ":pipeline:"
         plugins:
-          - jwplayer/buildpipe#v0.5.0:
+          - jwplayer/buildpipe#v0.7.0:
               dynamic_pipeline: dynamic_pipeline.yml
               projects:
                - label: project1
