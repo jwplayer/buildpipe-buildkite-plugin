@@ -13,7 +13,7 @@ Example
 steps:
   - label: ":pipeline:"
     plugins:
-      - jwplayer/buildpipe#v0.7.0:
+      - jwplayer/buildpipe#v0.7.1:
           dynamic_pipeline: dynamic_pipeline.yml
           projects:
            - label: project1
