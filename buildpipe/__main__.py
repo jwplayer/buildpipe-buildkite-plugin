@@ -159,7 +159,7 @@ def upload_pipeline(pipeline: dict):
     logger.debug("Pipeline:\n%s", out)
 
     try:
-        subprocess.run([f'echo "{out}" | buildkite-agent pipeline upload'], shell=True)
+        subprocess.run([f"echo '{out}' | buildkite-agent pipeline upload"], shell=True)
     except subprocess.CalledProcessError as e:
         logger.debug(e)
         sys.exit(-1)
