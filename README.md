@@ -13,7 +13,7 @@ Example
 
 ```yaml
 steps:
-  - label: ":pipeline:"
+  - label: ":buildkite:"
     plugins:
       - jwplayer/buildpipe#v0.7.4:
           dynamic_pipeline: dynamic_pipeline.yml
