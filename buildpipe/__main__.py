@@ -155,14 +155,18 @@ def load_steps() -> dict:
 
 
 def upload_pipeline(pipeline: dict):
-    out = dump_to_string(pipeline)
-    logger.debug("Pipeline:\n%s", out)
+    outfile = "pipeline_output"
+    with open(outfile, "w") as f:
+        yaml.dump(pipeline, f)
 
     try:
-        subprocess.run([f"echo '{out}' | buildkite-agent pipeline upload"], shell=True)
+        subprocess.run([f"buildkite-agent pipeline upload {outfile}"], shell=True)
     except subprocess.CalledProcessError as e:
         logger.debug(e)
         sys.exit(-1)
+    else:
+        out = dump_to_string(pipeline)
+        logger.debug("Pipeline:\n%s", out)
 
 
 def get_projects() -> List[dict]:
