@@ -34,8 +34,8 @@ version:
 	python setup.py --version
 
 release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+	python setup.py sdist bdist_wheel
+	twine upload dist/*
 
 dist: clean
 	python setup.py sdist

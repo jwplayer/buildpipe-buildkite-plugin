@@ -10,6 +10,7 @@ setup(
     name="buildpipe",
     description="Dynamically generate Buildkite pipelines",
     long_description=readme,
+    long_description_content_type="text/markdown",
     packages=find_packages(exclude=["tests"]),
     use_scm_version=True,
     author="Kamil Sindi",
