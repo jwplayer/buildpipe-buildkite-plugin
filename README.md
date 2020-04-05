@@ -90,6 +90,10 @@ The above pipelines specify the following:
     the project\'s path. If multiple paths are specified for a project,
     it\'s the first path.
 
+### Full working example
+
+For a full working example, check out [Buildkite Monorepo Example](https://github.com/ksindi/buildkite-monorepo-example).
+
 Configuration
 -------------
 
