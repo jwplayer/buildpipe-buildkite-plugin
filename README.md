@@ -134,9 +134,9 @@ Buildpipe assumes you are using a merge strategy on the master branch.
 Requirements
 ------------
 
-Python3 and pip3 are currently required, but we have plant to convert it into a binary with Golang.
+Python3 is currently required, but we are [planning](https://github.com/jwplayer/buildpipe-buildkite-plugin/issues/43) to convert buildpipe to a binary using Go.
 
-Just make sure to install them in your agent bootstrap script or Dockerfile.
+Just make sure to install Python3 in your agent bootstrap script or Dockerfile.
 
 
 #### Cloudformation bootstrap script
