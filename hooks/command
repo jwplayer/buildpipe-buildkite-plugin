@@ -3,10 +3,10 @@ set -euo pipefail
 
 buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.7.0}"
 
-if [[ "$BUILDKITE_PLUGIN_BUILDPIPE_RUN_MODE" == "test" ]]; then
-  python3 setup.py install
-else
+if [[ -z "$BUILDKITE_PLUGIN_BUILDPIPE_TEST_MODE" ]]; then
   pip3 install buildpipe==$buildpipe_version
+else
+  python3 setup.py install
 fi
 
 buildpipe
