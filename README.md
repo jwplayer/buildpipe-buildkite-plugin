@@ -7,6 +7,8 @@ for monorepos where you want to create dependencies between projects.
 Example
 -------
 
+![Update projects](images/example.png)
+
 ### initial\_pipeline.yml
 
 ```yaml
@@ -18,13 +20,14 @@ steps:
           projects:
            - label: project1
              path: project1/  # changes in this dir will trigger steps for project1
+             skip:
+               - test  # skip steps with label deploy* (e.g. deploy-prd)
+               - deploy*  # skip steps with label deploy* (e.g. deploy-prd)
            - label: project2
-             skip: deploy*  # skip steps with label deploy* (e.g. deploy-prd)
+             skip: test
              path: project2/
            - label: project3
-             skip:
-               - test
-               - build
+             skip: deploy-stg
              path:
                - project3/
                - project2/somedir/  # project3 steps will also be triggered by changes in this dir
@@ -66,6 +69,7 @@ steps:
       - make deploy-staging
   - wait
   - block: ":rocket: Release!"
+    branches: "master"
   - wait
   - label: deploy-prod
     branches: "master"
@@ -131,7 +135,7 @@ Python3 and pip3 are currently required, but we have plant to convert it into a 
 Just make sure to install them in your agent bootstrap script or Dockerfile.
 
 
-### Cloudformation bootstrap script
+#### Cloudformation bootstrap script
 
 ```bash
 # Install python3
@@ -139,7 +143,7 @@ yum -y install python3 python3-pip
 pip3 install -U setuptools wheel
 ```
 
-### Agent Dockerfile
+#### Agent Dockerfile
 
 ```
 FROM buildkite/agent:3.0
