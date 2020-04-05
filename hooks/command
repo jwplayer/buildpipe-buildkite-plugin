@@ -1,8 +1,50 @@
 #!/bin/bash
 set -euo pipefail
 
+head=$(git rev-parse --abbrev-ref HEAD)
+export BUILDKITE_PLUGIN_BUILDPIPE_CURRENT_BRANCH="${BUILDKITE_BRANCH:-$head}"
+
+f_get_diff() {
+  local commit
+  local current_branch
+  local diff_command
+
+  current_branch="$BUILDKITE_PLUGIN_BUILDPIPE_CURRENT_BRANCH"
+  commit="${BUILDKITE_PLUGIN_BUILDPIPE_CURRENT_BRANCH:-$BUILDKITE_COMMIT}"
+
+  export deploy_branch="${BUILDKITE_PLUGIN_BUILDPIPE_DEPLOY_BRANCH:-master}"
+
+  if [ "$current_branch" == "$deploy_branch" ]; then
+    diff_command="git log -m -1 --name-only --pretty=format: $commit"
+  else
+    diff_command="git log --name-only --no-merges --pretty=format: origin..HEAD"
+  fi
+
+  diff=$(eval "$diff_command")
+  if [[ -n "$diff" ]]; then
+    echo >&2 "Found diff using command ($diff_command)"
+    break
+  fi
+
+  echo "$diff"
+}
+
 basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 
-docker build $basedir -t buildpipe > /dev/null
+diff=$(f_get_diff)
+if [[ -z "$diff" ]]; then
+  echo "No diff detected"
+  exit 0
+else
+  mkdir -p .buildpipe
+  echo "$diff" > .buildpipe/git_diff
+fi
+
+docker build "$basedir" -t buildpipe > /dev/null
 
 docker run --rm -v "$PWD:/buildkite" --env-file <(env | grep BUILDKITE) buildpipe
+
+if [[ -s ".buildpipe/pipeline_output" ]]; then
+  echo "Uploading the pipeline to the buildkite-agent"
+  buildkite-agent pipeline upload .buildpipe/pipeline_output
+fi

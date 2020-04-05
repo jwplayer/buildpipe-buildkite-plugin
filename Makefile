@@ -14,6 +14,7 @@ clean-build:
 	rm -rf .coverage
 	rm -rf .pytest_cache
 	rm -rf *.egg-info
+	rm -rf .buildpipe
 
 lint: lint-plugin
 

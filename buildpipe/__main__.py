@@ -31,49 +31,26 @@ def dump_to_string(d):
         return buf.getvalue()
 
 
-def get_git_branch() -> str:
-    branch = os.getenv("BUILDKITE_BRANCH")
-    if not branch:
-        try:
-            result = subprocess.run(
-                "git rev-parse --abbrev-ref HEAD", stdout=subprocess.PIPE, shell=True,
-            )
-            branch = result.stdout.decode("utf-8").strip()
-        except Exception as e:
-            logger.error("Error running command: %s", e)
-            sys.exit(-1)
-    return branch
-
-
 def get_changed_files() -> Set[str]:
-    branch = get_git_branch()
+    filename = ".buildpipe/git_diff"
+    branch = os.environ[f"{PLUGIN_PREFIX}CURRENT_BRANCH"]
     logger.debug("Current branch: %s", branch)
     deploy_branch = os.getenv(f"{PLUGIN_PREFIX}DEPLOY_BRANCH", "master")
-    commit = os.getenv("BUILDKITE_COMMIT") or branch
-    if branch == deploy_branch:
-        command = f"git log -m -1 --name-only --pretty=format: {commit}"
-    else:
-        diff = os.getenv(f"{PLUGIN_PREFIX}DIFF")
-        if diff:
-            command = diff
-        else:
-            command = "git log --name-only --no-merges --pretty=format: origin..HEAD"
-
     try:
-        result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
-        changed = result.stdout.decode("utf-8").split("\n")
-    except Exception as e:
-        logger.error(e)
+        with open(filename, "r") as f:
+            changed = f.readlines()
+    except FileNotFoundError as e:
+        logger.error("Filename %s not found: %s", filename, e)
         sys.exit(-1)
+    else:
+        if branch == deploy_branch:
+            try:
+                first_merge_break = changed.index("")
+                changed = changed[:first_merge_break]
+            except ValueError:
+                pass
 
-    if branch == deploy_branch:
-        try:
-            first_merge_break = changed.index("")
-            changed = changed[:first_merge_break]
-        except ValueError:
-            pass
-
-    return {line for line in changed if line}
+        return {line for line in changed if line}
 
 
 def generate_project_steps(step: dict, projects: List[dict]) -> List[dict]:
@@ -151,17 +128,6 @@ def load_steps() -> dict:
         return pipeline["steps"]
 
 
-def upload_pipeline(pipeline: dict):
-    out = dump_to_string(pipeline)
-    logger.debug("Pipeline:\n%s", out)
-
-    try:
-        subprocess.run([f'echo "{out}" | buildkite-agent pipeline upload'], shell=True)
-    except subprocess.CalledProcessError as e:
-        logger.debug(e)
-        sys.exit(-1)
-
-
 def get_projects() -> List[dict]:
     re_label = re.compile(f"{PLUGIN_PREFIX}PROJECTS_[0-9]*_LABEL")
     project_labels = {k: v for k, v in os.environ.items() if re.search(re_label, k)}
@@ -207,4 +173,8 @@ if __name__ == "__main__":
         sys.exit(0)
     steps = load_steps()
     pipeline = generate_pipeline(steps, affected_projects)
-    upload_pipeline(pipeline)
+
+    with open(".buildpipe/pipeline_output", "w") as f:
+        yaml.dump(pipeline, f)
+
+    logger.debug("Pipeline:\n%s", dump_to_string(pipeline))

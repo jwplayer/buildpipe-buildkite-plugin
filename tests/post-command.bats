@@ -5,13 +5,10 @@ load "$BATS_PATH/load.bash"
 setup() {
   _GET_CHANGED_FILE='log --name-only --no-merges --pretty=format: origin..HEAD'
   stub git "${_GET_CHANGED_FILE} : echo 'project0/app.py'"
-  stub buildkite-agent pipeline upload
 }
 
 teardown() {
   unstub git
-  # TODO: fix not being able to unstub
-  # unstub buildkite-agent
 }
 
 
@@ -24,6 +21,7 @@ teardown() {
   export BUILDKITE_PLUGIN_BUILDPIPE_PROJECTS_1_PATH_1="project0"
   export BUILDKITE_PLUGIN_BUILDPIPE_LOG_LEVEL="DEBUG"
   export BUILDKITE_BRANCH="not_master"
+  export BUILDKITE_PLUGIN_BUILDPIPE_CURRENT_BRANCH="not_master"
 
   # TODO: figure out to use hooks/command
   # run hooks/command
