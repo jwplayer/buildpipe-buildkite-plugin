@@ -10,6 +10,7 @@ setup() {
 
 teardown() {
   unstub git
+  # TODO: fix not being able to unstub
   # unstub buildkite-agent
 }
 
@@ -22,9 +23,10 @@ teardown() {
   export BUILDKITE_PLUGIN_BUILDPIPE_PROJECTS_1_PATH_0="project1"
   export BUILDKITE_PLUGIN_BUILDPIPE_PROJECTS_1_PATH_1="project0"
   export BUILDKITE_PLUGIN_BUILDPIPE_LOG_LEVEL="DEBUG"
+  export BUILDKITE_PLUGIN_BUILDPIPE_RUN_MODE="test"
   export BUILDKITE_BRANCH="not_master"
 
-  run python3 "$PWD/buildpipe"
+  run hooks/command
 
   assert_success
   assert_output --partial "label: test project0"

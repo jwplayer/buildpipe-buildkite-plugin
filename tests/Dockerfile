@@ -6,7 +6,6 @@ RUN apk add --update-cache \
   && python3 -m ensurepip \
   && rm -rf /var/cache/apk/*
 
-COPY requirements.txt ./
-RUN pip3 install --no-cache-dir -r requirements.txt
+COPY . .
 
 CMD ["bats", "tests/"]

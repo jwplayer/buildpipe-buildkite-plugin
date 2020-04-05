@@ -2,7 +2,8 @@ name: Buildpipe
 description: Dynamically generate Buildkite pipelines based on project changes
 author: https://github.com/ksindi
 requirements:
-  - docker
+  - python3
+  - pip3
 configuration:
   properties:
     diff:

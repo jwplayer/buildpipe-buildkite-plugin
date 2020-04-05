@@ -1,12 +1,10 @@
-version: '2'
+version: '3'
 services:
-  tests:
+  buildkite_plugin_tester:
     build:
       context: .
-      dockerfile: Dockerfile-test
-    volumes:
-      - ".:/plugin:ro"
-  lint:
+      dockerfile: tests/Dockerfile
+  buildkite_plugin_linter:
     image: buildkite/plugin-linter
     command: ['--id', 'jwplayer/buildpipe']
     volumes:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Dynamically generate Buildkite pipeline artifact based on git changes."""
+import argparse
 from fnmatch import fnmatch
 import io
 import logging
@@ -11,6 +12,8 @@ from typing import List, Set
 
 from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
+
+from buildpipe import __version__
 
 
 PLUGIN_PREFIX = "BUILDKITE_PLUGIN_BUILDPIPE_"
@@ -199,7 +202,15 @@ def get_projects() -> List[dict]:
     return projects
 
 
-if __name__ == "__main__":
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--version", "-V", action="version", version=__version__)
+    return parser
+
+
+def main():
+    parser = create_parser()
+    parser.parse_args()
     projects = get_projects()
     affected_projects = get_affected_projects(projects)
     if not affected_projects:

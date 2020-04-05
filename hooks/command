@@ -1,8 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.7.0}"
 
-docker build $basedir -t buildpipe > /dev/null
+if [[ "$BUILDKITE_PLUGIN_BUILDPIPE_RUN_MODE" == "test" ]]; then
+  python3 setup.py install
+else
+  pip3 install buildpipe==$buildpipe_version
+fi
 
-docker run --rm --env-file <(env | grep BUILDKITE) buildpipe
+buildpipe

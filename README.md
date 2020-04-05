@@ -2,7 +2,7 @@ Buildpipe
 =========
 
 A Buildkite plugin to dynamically generate pipelines. Especially useful
-for monorepos.
+for monorepos where you want to create dependencies between projects.
 
 Example
 -------
@@ -27,7 +27,7 @@ steps:
                - build
              path:
                - project3/
-               - project2/somedir/  # project3 steps will also be trigger by changes in this dir
+               - project2/somedir/  # project3 steps will also be triggered by changes in this dir
 ```
 
 ### dynamic\_pipeline.yml
@@ -116,24 +116,39 @@ Other useful things to note:
 `diff` command
 --------------
 
-The default `diff` commands are (run in the order shown):
-
-```bash
-# Used to check if on a feature branch and check diff against master
-git diff --name-only origin/master...HEAD
-
-# Useful for checking master against master in a merge commit strategy environment
-git diff --name-only HEAD HEAD~1
-```
-
-Both of the above commands are run, in their order listed above to
-detect if there is any `diff`.
-
 Depending on your [merge
 strategy](https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github),
-you might need to use different [diff]{.title-ref} commands.
+you might need to use different diff command.
 
 Buildpipe assumes you are using a merge strategy on the master branch.
+
+
+Requirements
+------------
+
+Python3 and pip3 are currently required, but we have plant to convert it into a binary with Golang.
+
+Just make sure to install them in your agent bootstrap script or Dockerfile.
+
+
+### Cloudformation bootstrap script
+
+```bash
+# Install python3
+yum -y install python3 python3-pip
+pip3 install -U setuptools wheel
+```
+
+### Agent Dockerfile
+
+```
+FROM buildkite/agent:3.0
+
+RUN apk add --no-cache \
+  # Languages
+  python3 py-setuptools
+```
+
 
 Troubleshooting
 ---------------
@@ -166,8 +181,8 @@ License
 
 MIT
 
-Acknowledgement
----------------
+Acknowledgements
+----------------
 
 The rewrite to a plugin was inspired by
 [git-diff-conditional-buildkite-plugin](https://github.com/Zegocover/git-diff-conditional-buildkite-plugin).
