@@ -21,8 +21,8 @@ steps:
            - label: project1
              path: project1/  # changes in this dir will trigger steps for project1
              skip:
-               - test  # skip steps with label deploy* (e.g. deploy-prd)
-               - deploy*  # skip steps with label deploy* (e.g. deploy-prd)
+               - test  # skip steps with label test
+               - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
            - label: project2
              skip: test
              path: project2/
