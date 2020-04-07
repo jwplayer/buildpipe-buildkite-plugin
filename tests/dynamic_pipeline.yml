@@ -1,3 +1,10 @@
+projects:
+  - label: project0
+    path: project0
+  - label: project1
+    path:
+      - project1
+      - project0
 steps:
   - label: test
     env:

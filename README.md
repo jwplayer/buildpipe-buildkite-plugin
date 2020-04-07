@@ -15,28 +15,28 @@ Example
 steps:
   - label: ":buildkite:"
     plugins:
-      - jwplayer/buildpipe#v0.7.4:
+      - jwplayer/buildpipe#v0.8.0:
           dynamic_pipeline: dynamic_pipeline.yml
-          projects:
-           - label: project1
-             path: project1/  # changes in this dir will trigger steps for project1
-             skip:
-               - test  # skip steps with label test
-               - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
-           - label: project2
-             skip: test
-             path: project2/
-           - label: project3
-             skip: deploy-stg
-             path:
-               - project3/
-               - project2/somedir/  # project3 steps will also be triggered by changes in this dir
 ```
 
 ### dynamic\_pipeline.yml
 
 ```yaml
-steps:
+projects:
+ - label: project1
+   path: project1/  # changes in this dir will trigger steps for project1
+   skip:
+     - test  # skip steps with label test
+     - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
+ - label: project2
+   skip: test
+   path: project2/
+ - label: project3
+   skip: deploy-stg
+   path:
+     - project3/
+     - project2/somedir/  # project3 steps will also be triggered by changes in this dir
+steps:  # the same as regular buildkite steps
   - label: test
     env:
       BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
@@ -104,9 +104,8 @@ Configuration
 | dynamic\_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
 | diff              | No       | string |         | Can be used to override the default commands (see below for a better explanation of the defaults) |
 | log\_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
-| projects          | Yes      |  array |         | List of projects that buildpipe will run steps for |
 
-### Project
+### Project schema
 
 | Option | Required | Type   | Default | Description                           |
 | ------ | -------- | ------ | ------- | ------------------------------------- |

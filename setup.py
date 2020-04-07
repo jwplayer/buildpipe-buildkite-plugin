@@ -18,7 +18,7 @@ setup(
     url="https://github.com/jwplayer/buildpipe-buildkite-plugin",
     keywords="pipeline buildkite buildkite-plugin cicd".split(),
     license="MIT",
-    install_requires=["ruamel.yaml>=0.16.10", "setuptools_scm"],
+    install_requires=["ruamel.yaml>=0.16.10", "jsonschema>=3.2.0", "setuptools_scm"],
     setup_requires=["pytest-runner"],
     tests_require=["pytest", "pytest-cov", "pytest-flake8"],
     include_package_data=True,

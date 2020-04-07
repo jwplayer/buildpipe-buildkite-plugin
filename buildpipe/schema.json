@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "buildpipe schema",
+  "description": "buildpipe schema",
+  "type": "object",
+  "definitions": {
+    "StringOrArray": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {"type": "string"},
+          {
+          "type": "array",
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          }
+        }]
+      }
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Project label"
+        },
+        "path": {
+          "$ref": "#/definitions/StringOrArray",
+          "description": "Path of project"
+        },
+        "skip": {
+          "$ref": "#/definitions/StringOrArray",
+          "description": "Step labels to skip"
+        }
+      },
+      "required": ["label", "path"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Project"
+      }
+    }
+  },
+  "required": ["projects"],
+  "additionalProperties": false
+}

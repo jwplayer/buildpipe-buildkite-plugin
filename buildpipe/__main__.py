@@ -3,13 +3,15 @@
 import argparse
 from fnmatch import fnmatch
 import io
+import json
 import logging
 import os
-import re
+import pathlib
 import subprocess
 import sys
-from typing import List, Set
+from typing import List, Set, Union
 
+import jsonschema
 from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
 
@@ -26,6 +28,17 @@ logger.setLevel(log_level)
 yaml = YAML(typ="safe")
 yaml.default_flow_style = False
 yaml.representer.ignore_aliases = lambda *data: True
+
+
+def listify(arg: Union[None, str, List[str]]) -> List[str]:
+    if arg is None or len(arg) == 0:
+        return []
+    elif isinstance(arg, str):
+        return [arg]
+    elif isinstance(arg, (list, tuple)):
+        return list(arg)
+    else:
+        raise ValueError(f"Argument is neither None, string nor list. Found {arg}")
 
 
 def dump_to_string(d):
@@ -87,7 +100,7 @@ def generate_project_steps(step: dict, projects: List[dict]) -> List[dict]:
                 "label": f'{step["label"]} {project["label"]}',
                 "env": {
                     "BUILDPIPE_PROJECT_LABEL": project["label"],
-                    "BUILDPIPE_PROJECT_PATH": project["main_path"],
+                    "BUILDPIPE_PROJECT_PATH": listify(project["path"])[0],
                     # Make sure step envs aren't overridden
                     **(step.get("env") or {}),
                 },
@@ -99,7 +112,7 @@ def generate_project_steps(step: dict, projects: List[dict]) -> List[dict]:
 
 
 def check_project_affected(project: dict, changed_files: Set[str]) -> bool:
-    for path in project["path"]:
+    for path in listify(project.get("path")):
         if path == ".":
             return True
         project_dirs = os.path.normpath(path).split("/")
@@ -121,14 +134,14 @@ def get_affected_projects(projects: List[dict]) -> List[dict]:
 
 
 def check_project_rules(step: dict, project: dict) -> bool:
-    for pattern in project.get("skip", []):
+    for pattern in listify(project.get("skip")):
         if fnmatch(step["label"], pattern):
             return False
 
     return True
 
 
-def generate_pipeline(steps: dict, projects: List[dict]) -> dict:
+def generate_pipeline(steps: List[dict], projects: List[dict]) -> dict:
     generated_steps = []
     for step in steps:
         if "env" in step and step.get("env", {}).get("BUILDPIPE_SCOPE") == "project":
@@ -139,7 +152,7 @@ def generate_pipeline(steps: dict, projects: List[dict]) -> dict:
     return {"steps": generated_steps}
 
 
-def load_steps() -> dict:
+def load_dynamic_pipeline() -> dict:
     filename = os.environ[f"{PLUGIN_PREFIX}DYNAMIC_PIPELINE"]
     try:
         with open(filename, "r") as f:
@@ -151,7 +164,7 @@ def load_steps() -> dict:
         logger.error("Invalid YAML in file %s: %s", filename, e)
         sys.exit(-1)
     else:
-        return pipeline["steps"]
+        return pipeline
 
 
 def upload_pipeline(pipeline: dict):
@@ -169,41 +182,17 @@ def upload_pipeline(pipeline: dict):
         logger.debug("Pipeline:\n%s", out)
 
 
-def get_projects() -> List[dict]:
-    re_label = re.compile(f"{PLUGIN_PREFIX}PROJECTS_[0-9]*_LABEL")
-    project_labels = {k: v for k, v in os.environ.items() if re.search(re_label, k)}
-    projects = []
+def validate_projects(projects: list) -> bool:
+    schema_path = pathlib.Path(__file__).parent / "schema.json"
+    with schema_path.open() as f_schema:
+        schema = json.load(f_schema)
 
-    for key, label in project_labels.items():
-        logger.debug("Checking %s", key)
-
-        project = {}
-        project_number = key.replace(f"{PLUGIN_PREFIX}PROJECTS_", "").replace(
-            "_LABEL", ""
-        )
-        project["label"] = label
-
-        main_path = os.getenv(f"{PLUGIN_PREFIX}PROJECTS_{project_number}_PATH")
-        if main_path is not None:
-            project["main_path"] = main_path
-        else:
-            # path is an array so choose the first path as the main one
-            project["main_path"] = os.environ[
-                f"{PLUGIN_PREFIX}PROJECTS_{project_number}_PATH_0"
-            ]
-
-        for option in ["PATH", "SKIP"]:
-            logger.debug("Checking %s", option)
-
-            re_option = re.compile(f"{PLUGIN_PREFIX}PROJECTS_{project_number}_{option}")
-
-            values = [v for k, v in os.environ.items() if re.search(re_option, k)]
-
-            logger.debug("Found patterns: (%s)", values)
-            project[option.lower()] = values
-        projects.append(project)
-
-    return projects
+    try:
+        jsonschema.validate(dict(projects=projects), schema)
+    except jsonschema.exceptions.ValidationError as e:
+        raise Exception("Invalid projects schema") from e
+    else:
+        return True
 
 
 def create_parser():
@@ -215,11 +204,14 @@ def create_parser():
 def main():
     parser = create_parser()
     parser.parse_args()
-    projects = get_projects()
+    dynamic_pipeline = load_dynamic_pipeline()
+    steps, projects = dynamic_pipeline["steps"], dynamic_pipeline["projects"]
+    # validate_projects(projects)
     affected_projects = get_affected_projects(projects)
+
     if not affected_projects:
         logger.info("No project was affected from changes")
         sys.exit(0)
-    steps = load_steps()
-    pipeline = generate_pipeline(steps, affected_projects)
-    upload_pipeline(pipeline)
+
+    generated_pipeline = generate_pipeline(steps, affected_projects)
+    upload_pipeline(generated_pipeline)

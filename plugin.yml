@@ -12,16 +12,5 @@ configuration:
       type: string
     log_level:
       type: string
-    projects:
-      type: [ array ]
-      minimum: 1
-      properties:
-        label:
-          type: string
-        path:
-          type: [ string, array ]
-        skip:
-          type: [ string, array ]
   required:
     - dynamic_pipeline
-    - projects
