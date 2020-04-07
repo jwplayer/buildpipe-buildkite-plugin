@@ -3,15 +3,12 @@
 import argparse
 from fnmatch import fnmatch
 import io
-import json
 import logging
 import os
-import pathlib
 import subprocess
 import sys
 from typing import List, Set, Union
 
-import jsonschema
 from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
 
@@ -182,19 +179,6 @@ def upload_pipeline(pipeline: dict):
         logger.debug("Pipeline:\n%s", out)
 
 
-def validate_projects(projects: list) -> bool:
-    schema_path = pathlib.Path(__file__).parent / "schema.json"
-    with schema_path.open() as f_schema:
-        schema = json.load(f_schema)
-
-    try:
-        jsonschema.validate(dict(projects=projects), schema)
-    except jsonschema.exceptions.ValidationError as e:
-        raise Exception("Invalid projects schema") from e
-    else:
-        return True
-
-
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", "-V", action="version", version=__version__)
@@ -206,7 +190,6 @@ def main():
     parser.parse_args()
     dynamic_pipeline = load_dynamic_pipeline()
     steps, projects = dynamic_pipeline["steps"], dynamic_pipeline["projects"]
-    # validate_projects(projects)
     affected_projects = get_affected_projects(projects)
 
     if not affected_projects:
