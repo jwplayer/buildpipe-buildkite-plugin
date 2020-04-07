@@ -7,7 +7,7 @@ for monorepos where you want to create dependencies between projects.
 Example
 -------
 
-![Update projects](images/example.png)
+![Buildpipe example](images/example.png)
 
 ### initial\_pipeline.yml
 
@@ -25,15 +25,16 @@ steps:
 projects:
  - label: project1
    path: project1/  # changes in this directory will trigger steps for project1
-   skip: deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
+   skip:
+     - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
+     - test
  - label: project2
    skip: test
    path:
       - project2/
       - project1  # you can trigger a project using multiple paths
  - label: project3
-   skip:  # you can skip a list of projects
-     - test
+   skip:
      - deploy-stg
    path: project3/somedir/  # subpaths can also be triggered
 steps:  # the same schema as regular buildkite pipeline steps
