@@ -102,7 +102,8 @@ Configuration
 | Option           | Required | Type   | Default | Description
 | ---------------- | -------- | ------ | ------- | -------------------------------------------------- |
 | default_branch   | No       | string | master  | Default branch of repository |
-| diff             | No       | string |         | Can be used to override the default commands (see below for a better explanation of the defaults) |
+| diff_pr          | No       | string |         | Override command for non-default branch (see below for a better explanation of the defaults) |
+| diff_default     | No       | string |         | Override command for default branch (see below for a better explanation of the defaults) |
 | dynamic_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
 | log_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
 
@@ -121,14 +122,24 @@ Other useful things to note:
 -   If multiple paths are specified, the environment variable
     `BUILDPIPE_PROJECT_PATH` will be the first path.
 
-`diff` command
---------------
+`diff_` commands
+----------------
 
 Depending on your [merge
 strategy](https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github),
 you might need to use different diff command.
 
-Buildpipe assumes you are using a merge strategy on the master branch.
+Buildpipe assumes you are using a merge strategy on the default branch, which is assumed to be `master`.
+
+The command for the non-default branch (e.g. when you have a PR up) is:
+```bash
+git log --name-only --no-merges --pretty=format: origin..HEAD
+```
+
+The command for the default branch you merge to is currently:
+```bash
+git log -m -1 --name-only --pretty=format: $BUILDKITE_COMMIT
+```
 
 
 Requirements

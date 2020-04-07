@@ -8,7 +8,9 @@ configuration:
   properties:
     default_branch:
       type: string
-    diff:
+    diff_default:
+      type: string
+    diff_pr:
       type: string
     dynamic_pipeline:
       type: string

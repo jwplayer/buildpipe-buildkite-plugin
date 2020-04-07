@@ -54,7 +54,7 @@ pipeline_schema = json.loads("""
       "type": "array"
     }
   },
-  "required": ["projects"],
+  "required": ["projects", "steps"],
   "additionalProperties": false
 }
 """.strip())
@@ -110,16 +110,12 @@ def get_git_branch() -> str:
 def get_changed_files() -> Set[str]:
     branch = get_git_branch()
     logger.debug("Current branch: %s", branch)
-    deploy_branch = os.getenv(f"{PLUGIN_PREFIX}DEFAULT_BRANCH", "master")
-    commit = os.getenv("BUILDKITE_COMMIT") or branch
-    if branch == deploy_branch:
-        command = f"git log -m -1 --name-only --pretty=format: {commit}"
+    default_branch = os.getenv(f"{PLUGIN_PREFIX}DEFAULT_BRANCH", "master")
+    if branch == default_branch:
+        commit = os.getenv("BUILDKITE_COMMIT", branch)
+        command = os.getenv(f"{PLUGIN_PREFIX}DIFF_DEFAULT", f"git log -m -1 --name-only --pretty=format: {commit}")
     else:
-        diff = os.getenv(f"{PLUGIN_PREFIX}DIFF")
-        if diff:
-            command = diff
-        else:
-            command = "git log --name-only --no-merges --pretty=format: origin..HEAD"
+        command = os.getenv(f"{PLUGIN_PREFIX}DIFF_PR", "git log --name-only --no-merges --pretty=format: origin..HEAD")
 
     try:
         result = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
@@ -128,7 +124,7 @@ def get_changed_files() -> Set[str]:
         logger.error(e)
         sys.exit(-1)
 
-    if branch == deploy_branch:
+    if branch == default_branch:
         try:
             first_merge_break = changed.index("")
             changed = changed[:first_merge_break]
