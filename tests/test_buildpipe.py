@@ -16,16 +16,13 @@ PROJECTS = yaml.load(
     io.StringIO(
         """
   - label: project1
-    main_path: project1/
     path:
       - project1/
   - label: project2
-    main_path: project2/
     skip: deploy*
     path:
       - project2/
   - label: project3
-    main_path: project3/
     skip:
       - test
       - build
@@ -33,7 +30,6 @@ PROJECTS = yaml.load(
       - project3/
       - project2/
   - label: project4
-    main_path: project4/somedir/
     path:
       - project4/somedir/
 """
