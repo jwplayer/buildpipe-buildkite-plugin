@@ -15,33 +15,33 @@ Example
 steps:
   - label: ":buildkite:"
     plugins:
-      - jwplayer/buildpipe#v0.7.4:
+      - jwplayer/buildpipe#v0.8.0:
           dynamic_pipeline: dynamic_pipeline.yml
-          projects:
-           - label: project1
-             path: project1/  # changes in this dir will trigger steps for project1
-             skip:
-               - test  # skip steps with label test
-               - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
-           - label: project2
-             skip: test
-             path: project2/
-           - label: project3
-             skip: deploy-stg
-             path:
-               - project3/
-               - project2/somedir/  # project3 steps will also be triggered by changes in this dir
 ```
 
 ### dynamic\_pipeline.yml
 
 ```yaml
-steps:
+projects:
+ - label: project1
+   path: project1/  # changes in this dir will trigger steps for project1
+   skip: deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
+ - label: project2
+   skip: test
+   path:
+      - project2/
+      - project1  # you can trigger a project using multiple paths
+ - label: project3
+   skip:  # you can skip a list of projects
+     - test
+     - deploy-stg
+   path: project3/somedir/  # subpaths can also be triggered
+steps:  # the same schema as regular buildkite pipeline steps
   - label: test
     env:
       BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
     command:
-      - cd $$BUILDPIPE_PROJECT_PATH
+      - cd $$BUILDPIPE_PROJECT_PATH  # BUILDPIPE_PROJECT_PATH will be set by buildpipe
       - make test
   - wait
   - label: build
@@ -60,7 +60,7 @@ steps:
     command:
       - make tag-release
   - wait
-  - label: deploy-staging
+  - label: deploy-stg
     branches: "master"
     env:
       BUILDPIPE_SCOPE: project
@@ -71,7 +71,7 @@ steps:
   - block: ":rocket: Release!"
     branches: "master"
   - wait
-  - label: deploy-prod
+  - label: deploy-prd
     branches: "master"
     env:
       BUILDPIPE_SCOPE: project
@@ -99,14 +99,15 @@ Configuration
 
 ### Plugin
 
-| Option            | Required | Type   | Default | Description
-| ----------------- | -------- | ------ | ------- | -------------------------------------------------- |
-| dynamic\_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
-| diff              | No       | string |         | Can be used to override the default commands (see below for a better explanation of the defaults) |
-| log\_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
-| projects          | Yes      |  array |         | List of projects that buildpipe will run steps for |
+| Option           | Required | Type   | Default | Description
+| ---------------- | -------- | ------ | ------- | -------------------------------------------------- |
+| default_branch   | No       | string | master  | Default branch of repository |
+| diff_pr          | No       | string |         | Override command for non-default branch (see below for a better explanation of the defaults) |
+| diff_default     | No       | string |         | Override command for default branch (see below for a better explanation of the defaults) |
+| dynamic_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
+| log_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
 
-### Project
+### Project schema
 
 | Option | Required | Type   | Default | Description                           |
 | ------ | -------- | ------ | ------- | ------------------------------------- |
@@ -121,14 +122,24 @@ Other useful things to note:
 -   If multiple paths are specified, the environment variable
     `BUILDPIPE_PROJECT_PATH` will be the first path.
 
-`diff` command
---------------
+`diff_` commands
+----------------
 
 Depending on your [merge
 strategy](https://help.github.com/en/github/administering-a-repository/about-merge-methods-on-github),
 you might need to use different diff command.
 
-Buildpipe assumes you are using a merge strategy on the master branch.
+Buildpipe assumes you are using a merge strategy on the default branch, which is assumed to be `master`.
+
+The command for the non-default branch (e.g. when you have a PR up) is:
+```bash
+git log --name-only --no-merges --pretty=format: origin..HEAD
+```
+
+The command for the default branch you merge to is currently:
+```bash
+git log -m -1 --name-only --pretty=format: $BUILDKITE_COMMIT
+```
 
 
 Requirements

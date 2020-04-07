@@ -6,22 +6,15 @@ requirements:
   - pip3
 configuration:
   properties:
-    diff:
+    default_branch:
+      type: string
+    diff_default:
+      type: string
+    diff_pr:
       type: string
     dynamic_pipeline:
       type: string
     log_level:
       type: string
-    projects:
-      type: [ array ]
-      minimum: 1
-      properties:
-        label:
-          type: string
-        path:
-          type: [ string, array ]
-        skip:
-          type: [ string, array ]
   required:
     - dynamic_pipeline
-    - projects
