@@ -5,6 +5,8 @@ from unittest import mock
 import pytest
 
 from buildpipe.__main__ import (
+    BuildpipeException,
+    validate_dynamic_pipeline,
     yaml,
     generate_pipeline,
     get_affected_projects,
@@ -35,6 +37,17 @@ PROJECTS = yaml.load(
 """
     )
 )
+
+
+def test_invalide_projects_config():
+    config = yaml.load("""
+    projects:
+      - invalid: foo
+    steps:
+      - wait
+    """)
+    with pytest.raises(BuildpipeException):
+        validate_dynamic_pipeline(config)
 
 
 @pytest.mark.parametrize(

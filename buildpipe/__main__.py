@@ -3,16 +3,61 @@
 import argparse
 from fnmatch import fnmatch
 import io
+import json
 import logging
 import os
 import subprocess
 import sys
-from typing import List, Set, Union
+from typing import List, Set, Union, Iterable
 
+import jsonschema
 from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
 
 from buildpipe import __version__
+
+pipeline_schema = json.loads("""
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "buildpipe schema",
+  "description": "buildpipe schema",
+  "type": "object",
+  "definitions": {
+    "Project": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Project label"
+        },
+        "path": {
+          "type": ["string", "array"],
+          "description": "Path of project"
+        },
+        "skip": {
+          "type": ["string", "array"],
+          "description": "Step labels to skip"
+        }
+      },
+      "required": ["label", "path"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Project"
+      }
+    },
+    "steps": {
+      "type": "array"
+    }
+  },
+  "required": ["projects"],
+  "additionalProperties": false
+}
+""".strip())
 
 
 PLUGIN_PREFIX = "BUILDKITE_PLUGIN_BUILDPIPE_"
@@ -27,12 +72,16 @@ yaml.default_flow_style = False
 yaml.representer.ignore_aliases = lambda *data: True
 
 
+class BuildpipeException(Exception):
+    pass
+
+
 def listify(arg: Union[None, str, List[str]]) -> List[str]:
     if arg is None or len(arg) == 0:
         return []
     elif isinstance(arg, str):
         return [arg]
-    elif isinstance(arg, (list, tuple)):
+    elif isinstance(arg, Iterable):
         return list(arg)
     else:
         raise ValueError(f"Argument is neither None, string nor list. Found {arg}")
@@ -179,6 +228,15 @@ def upload_pipeline(pipeline: dict):
         logger.debug("Pipeline:\n%s", out)
 
 
+def validate_dynamic_pipeline(pipeline: list) -> bool:
+    try:
+        jsonschema.validate(pipeline, pipeline_schema)
+    except jsonschema.exceptions.ValidationError as e:
+        raise BuildpipeException("Invalid projects schema") from e
+    else:
+        return True
+
+
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", "-V", action="version", version=__version__)
@@ -189,6 +247,7 @@ def main():
     parser = create_parser()
     parser.parse_args()
     dynamic_pipeline = load_dynamic_pipeline()
+    validate_dynamic_pipeline(dynamic_pipeline)
     steps, projects = dynamic_pipeline["steps"], dynamic_pipeline["projects"]
     affected_projects = get_affected_projects(projects)
 
