@@ -6,6 +6,8 @@ requirements:
   - pip3
 configuration:
   properties:
+    default_branch:
+      type: string
     diff:
       type: string
     dynamic_pipeline:

@@ -61,7 +61,7 @@ def get_git_branch() -> str:
 def get_changed_files() -> Set[str]:
     branch = get_git_branch()
     logger.debug("Current branch: %s", branch)
-    deploy_branch = os.getenv(f"{PLUGIN_PREFIX}DEPLOY_BRANCH", "master")
+    deploy_branch = os.getenv(f"{PLUGIN_PREFIX}DEFAULT_BRANCH", "master")
     commit = os.getenv("BUILDKITE_COMMIT") or branch
     if branch == deploy_branch:
         command = f"git log -m -1 --name-only --pretty=format: {commit}"

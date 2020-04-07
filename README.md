@@ -99,11 +99,12 @@ Configuration
 
 ### Plugin
 
-| Option            | Required | Type   | Default | Description
-| ----------------- | -------- | ------ | ------- | -------------------------------------------------- |
-| dynamic\_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
-| diff              | No       | string |         | Can be used to override the default commands (see below for a better explanation of the defaults) |
-| log\_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
+| Option           | Required | Type   | Default | Description
+| ---------------- | -------- | ------ | ------- | -------------------------------------------------- |
+| default_branch   | No       | string | master  | Default branch of repository |
+| diff             | No       | string |         | Can be used to override the default commands (see below for a better explanation of the defaults) |
+| dynamic_pipeline | Yes      | string |         | The name including the path to the pipeline that contains all the actual steps |
+| log_level        | No       | string | INFO    | The Level of logging to be used by the python script underneath; pass DEBUG for verbose logging if errors occur |
 
 ### Project schema
 
