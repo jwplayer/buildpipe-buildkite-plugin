@@ -24,7 +24,7 @@ steps:
 ```yaml
 projects:
  - label: project1
-   path: project1/  # changes in this dir will trigger steps for project1
+   path: project1/  # changes in this directory will trigger steps for project1
    skip: deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
  - label: project2
    skip: test
@@ -41,7 +41,7 @@ steps:  # the same schema as regular buildkite pipeline steps
     env:
       BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
     command:
-      - cd $$BUILDPIPE_PROJECT_PATH  # BUILDPIPE_PROJECT_PATH will be set by buildpipe
+      - cd $$BUILDPIPE_PROJECT_PATH  # BUILDPIPE_PROJECT_PATH is set by buildpipe
       - make test
   - wait
   - label: build
