@@ -25,23 +25,23 @@ steps:
 projects:
  - label: project1
    path: project1/  # changes in this dir will trigger steps for project1
-   skip:
-     - test  # skip steps with label test
-     - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
+   skip: deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
  - label: project2
    skip: test
-   path: project2/
- - label: project3
-   skip: deploy-stg
    path:
-     - project3/
-     - project2/somedir/  # project3 steps will also be triggered by changes in this dir
-steps:  # the same as regular buildkite steps
+      - project2/
+      - project1  # you can trigger a project using multiple paths
+ - label: project3
+   skip:  # you can skip a list of projects
+     - test
+     - deploy-stg
+   path: project3/somedir/  # subpaths can also be triggered
+steps:  # the same schema as regular buildkite pipeline steps
   - label: test
     env:
       BUILDPIPE_SCOPE: project  # this variable ensures a test step is generated for each project
     command:
-      - cd $$BUILDPIPE_PROJECT_PATH
+      - cd $$BUILDPIPE_PROJECT_PATH  # BUILDPIPE_PROJECT_PATH will be set by buildpipe
       - make test
   - wait
   - label: build
@@ -60,7 +60,7 @@ steps:  # the same as regular buildkite steps
     command:
       - make tag-release
   - wait
-  - label: deploy-staging
+  - label: deploy-stg
     branches: "master"
     env:
       BUILDPIPE_SCOPE: project
@@ -71,7 +71,7 @@ steps:  # the same as regular buildkite steps
   - block: ":rocket: Release!"
     branches: "master"
   - wait
-  - label: deploy-prod
+  - label: deploy-prd
     branches: "master"
     env:
       BUILDPIPE_SCOPE: project
