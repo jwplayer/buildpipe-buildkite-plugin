@@ -25,7 +25,7 @@ lint-plugin:
 test: test-unit test-plugin
 
 test-unit:
-	python setup.py test
+	pytest
 
 test-plugin:
 	docker-compose up --build buildkite_plugin_tester

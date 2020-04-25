@@ -1,13 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.8.0}"
+buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.9.0}"
 is_test="${BUILDKITE_PLUGIN_BUILDPIPE_TEST_MODE:-false}"
 
 if [[ "$is_test" == "false" ]]; then
-  pip3 install buildpipe==$buildpipe_version
-else
-  python3 setup.py install
+  wget --quiet https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${BUILDKITE_PLUGIN_BUILDPIPE_VERSION}/buildpipe.py
 fi
 
-buildpipe
+python3 buildpipe.py

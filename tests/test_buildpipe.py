@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from buildpipe.__main__ import (
+from buildpipe import (
     BuildpipeException,
     validate_dynamic_pipeline,
     yaml,
@@ -61,7 +61,7 @@ def test_invalide_projects_config():
         (["app.py"], set()),
     ],
 )
-@mock.patch("buildpipe.__main__.get_changed_files")
+@mock.patch("buildpipe.get_changed_files")
 def test_get_affected_projects(mock_get_changed_files, changed_files, expected):
     mock_get_changed_files.return_value = changed_files
     projects = get_affected_projects(PROJECTS)

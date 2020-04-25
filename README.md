@@ -156,7 +156,7 @@ Just make sure to install Python3 in your agent bootstrap script or Dockerfile.
 ```bash
 # Install python3
 yum -y install python3 python3-pip
-pip3 install -U setuptools wheel
+pip3 install -U setuptools wheel ruamel.yaml>=0.16.10 jsonschema>=3.2.0
 ```
 
 #### Agent Dockerfile
@@ -167,6 +167,8 @@ FROM buildkite/agent:3.0
 RUN apk add --no-cache \
   # Languages
   python3 py-setuptools
+
+RUN pip3 install ruamel.yaml>=0.16.10 jsonschema>=3.2.0
 ```
 
 

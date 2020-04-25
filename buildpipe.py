@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Dynamically generate Buildkite pipeline artifact based on git changes."""
-import argparse
 from fnmatch import fnmatch
 import io
 import json
@@ -13,8 +12,6 @@ from typing import List, Set, Union, Iterable
 import jsonschema
 from ruamel.yaml import YAML
 from ruamel.yaml.scanner import ScannerError
-
-from buildpipe import __version__
 
 pipeline_schema = json.loads("""
 {
@@ -233,15 +230,7 @@ def validate_dynamic_pipeline(pipeline: list) -> bool:
         return True
 
 
-def create_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--version", "-V", action="version", version=__version__)
-    return parser
-
-
 def main():
-    parser = create_parser()
-    parser.parse_args()
     dynamic_pipeline = load_dynamic_pipeline()
     validate_dynamic_pipeline(dynamic_pipeline)
     steps, projects = dynamic_pipeline["steps"], dynamic_pipeline["projects"]
