@@ -5,7 +5,10 @@ buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.9.0}"
 is_test="${BUILDKITE_PLUGIN_BUILDPIPE_TEST_MODE:-false}"
 
 if [[ "$is_test" == "false" ]]; then
-  wget --quiet https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${BUILDKITE_PLUGIN_BUILDPIPE_VERSION}/buildpipe.py
+  PY_FILE=$(mktemp -p .)
+  wget --quiet -O $PY_FILE https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${BUILDKITE_PLUGIN_BUILDPIPE_VERSION}/buildpipe.py
+else
+  PY_FILE=$(mktemp -p .)
+  cp buildpipe.py $PY_FILE
+  python3 $PY_FILE
 fi
-
-python3 buildpipe.py
