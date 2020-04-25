@@ -146,7 +146,9 @@ git log -m -1 --name-only --pretty=format: $BUILDKITE_COMMIT
 Requirements
 ------------
 
-Python3 is currently required, but we are [planning](https://github.com/jwplayer/buildpipe-buildkite-plugin/issues/43) to convert buildpipe to a binary using Go.
+Python3 and the packages `ruamel.yaml` and `jsonschema` currently required,
+but we are [planning](https://github.com/jwplayer/buildpipe-buildkite-plugin/issues/43)
+to convert buildpipe to a binary using Go.
 
 Just make sure to install Python3 in your agent bootstrap script or Dockerfile.
 
@@ -156,7 +158,7 @@ Just make sure to install Python3 in your agent bootstrap script or Dockerfile.
 ```bash
 # Install python3
 yum -y install python3 python3-pip
-pip3 install -U setuptools wheel ruamel.yaml>=0.16.10 jsonschema>=3.2.0
+pip3 install -U setuptools ruamel.yaml>=0.16.10 jsonschema>=3.2.0
 ```
 
 #### Agent Dockerfile
@@ -201,7 +203,7 @@ make test
 License
 -------
 
-MIT
+Apache v2
 
 Acknowledgements
 ----------------

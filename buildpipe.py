@@ -230,7 +230,7 @@ def validate_dynamic_pipeline(pipeline: list) -> bool:
         return True
 
 
-def main():
+if __name__ == "__main__":
     dynamic_pipeline = load_dynamic_pipeline()
     validate_dynamic_pipeline(dynamic_pipeline)
     steps, projects = dynamic_pipeline["steps"], dynamic_pipeline["projects"]
