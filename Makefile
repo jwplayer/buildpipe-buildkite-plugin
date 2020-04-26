@@ -36,13 +36,14 @@ test-plugin:
 
 .PHONY: clean
 clean:
+	rm -f coverage
 	rm -f ${NAME}*
 
 distclean: clean
 	@rm -rf Gopkg.lock
 
 .PHONY: build
-build: clean distclean build-darwin build-linux
+build: clean distclean build-linux
 
 build-%:
 	GOOS=$* GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '${LDFLAGS}' -o ${PREFIX}${NAME}-$*
