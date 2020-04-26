@@ -25,8 +25,9 @@ ifneq (${DOCKER},)
 endif
 
 .PHONY: test
-test: test-unit test-plugin
+test: test-plugin
 
+# TODO: add unit tests
 test-unit:
 	go test ${TEST_FLAGS} -coverprofile=coverage
 
