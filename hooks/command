@@ -5,9 +5,8 @@ buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.9.0}"
 is_test="${BUILDKITE_PLUGIN_BUILDPIPE_TEST_MODE:-false}"
 
 if [[ "$is_test" == "false" ]]; then
-  wget -O buildpipe https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${buildpipe_version}/buildpipe-linux
+  curl -Lf -o buildpipe https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${buildpipe_version}/buildpipe-linux \
+    && chmod +x buildpipe
 fi
-
-chmod +x buildpipe
 
 ./buildpipe

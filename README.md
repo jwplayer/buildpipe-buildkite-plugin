@@ -146,27 +146,10 @@ The command for the default branch you merge to is currently:
 git log -m -1 --name-only --pretty=format: $BUILDKITE_COMMIT
 ```
 
-
 Requirements
 ------------
 
-Only `wget` is required to download the binary.
-
-
-#### Cloudformation bootstrap script
-
-```bash
-yum -y install wget
-```
-
-#### Agent Dockerfile
-
-```
-FROM buildkite/agent:3.0
-
-RUN apk add --no-cache wget
-```
-
+Only `curl` is required to download the binary.
 
 Troubleshooting
 ---------------
