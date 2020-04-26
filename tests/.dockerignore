@@ -1,0 +1,7 @@
+.git
+*_test.go
+coverage
+buildpipe*
+LICENSE
+Makefile
+*.md

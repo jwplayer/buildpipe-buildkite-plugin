@@ -1,43 +1,71 @@
-.PHONY: clean test version
+NAME=buildpipe
+VERSION := $(shell head CHANGELOG.md | grep -e '^[0-9]' | head -n 1 | cut -f 1 -d ' ')
+GOPATH  ?= $(curdir)/.gopath
+COMMIT=$(shell git rev-parse --short=7 HEAD)
+TIMESTAMP:=$(shell date -u '+%Y-%m-%dT%I:%M:%SZ')
 
-help:
-	@echo "clean - remove artifacts"
-	@echo "test - run unit test and test buildkite plugin"
-	@echo "release - package and upload a release"
-	@echo "dist - package"
+LDFLAGS += -X main.BuildTime=${TIMESTAMP}
+LDFLAGS += -X main.BuildSHA=${COMMIT}
+LDFLAGS += -X main.Version=${VERSION}
 
-clean: clean-build
+PREFIX?=${PWD}/
+DOCKER=$(shell command -v docker;)
+TEST_FLAGS?=-race
 
-clean-build:
-	rm -rf build/
-	rm -rf dist/
-	find . -type d -name __pycache__ -exec rm -r {} \+
-	rm -rf .eggs
-	rm -rf .coverage
-	rm -rf .pytest_cache
-	rm -rf *.egg-info
+.PHONY: all
+all: quality test
 
-lint: lint-plugin
+.PHONY: quality
+quality:
+	go vet
+	go fmt
+	go mod tidy
+ifneq (${DOCKER},)
+	docker run -v ${PWD}:/src -w /src -it golangci/golangci-lint golangci-lint run --true gocritic --true gosec --true golint --true stylecheck --exclude-use-default=false
+endif
 
-lint-plugin:
-	docker-compose run --rm buildkite_plugin_linter
+.PHONY: test
+test: test-plugin
 
-test: test-unit test-plugin
-
+# TODO: add unit tests
 test-unit:
-	python setup.py test
+	go test ${TEST_FLAGS} -coverprofile=coverage
 
 test-plugin:
 	docker-compose up --build buildkite_plugin_tester
 
-version:
-	python setup.py --version
+.PHONY: clean
+clean:
+	rm -f ${NAME}*
 
-release: clean
-	python setup.py sdist bdist_wheel
-	twine upload dist/*
+distclean: clean
+	@rm -rf Gopkg.lock
 
-dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
+.PHONY: build
+build: clean distclean build-darwin build-linux
+
+build-%:
+	GOOS=$* GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '${LDFLAGS}' -o ${PREFIX}${NAME}-$*
+
+.PHONY: docker
+docker:
+ifeq (${DOCKER},)
+	@echo Skipping Docker build because Docker is not installed
+else
+	docker run --rm -i hadolint/hadolint < Dockerfile
+	docker build \
+	--build-arg NAME="${NAME}" \
+	--build-arg VERSION="${VERSION}" \
+	--build-arg COMMIT="${COMMIT}" \
+	--build-arg BUILD_DATE="${TIMESTAMP}" \
+	--build-arg LDFLAGS='${LDFLAGS}' \
+	--tag ${NAME} .
+	docker tag ${NAME} ${NAME}:${VERSION}
+	docker run -it ${NAME}:${VERSION} -- -help 2>&1 | grep -F '${NAME} v${VERSION} ${TIMESTAMP} ${COMMIT}'
+endif
+
+release: test
+	go mod tidy
+	@echo "Releasing $(APPNAME) v$(VERSION)"
+	git tag v$(VERSION)
+	git push --tags
