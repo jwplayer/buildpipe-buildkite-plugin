@@ -24,13 +24,81 @@ teardown() {
   run hooks/command
 
   assert_success
-  assert_output --partial "label: test project1"
   refute_output --partial "label: deploy-stg project1"
   refute_output --partial "label: deploy-prd project1"
+  refute_output --partial "label: deploy-stg project3"
+  refute_output --partial "label: deploy-prd project3"
   refute_output --partial "label: test project2"
-  assert_output --partial "label: deploy-stg project2"
-  assert_output --partial "label: deploy-prd project2"
-  assert_output --partial "make tag"
-  assert_output --partial "block: ':rocket: Release!'"
-  assert_output --partial "wait"
+  refute_output --partial "label: test project3"
+  while read line
+  do
+    assert_output --partial $line
+  done << EOM
+steps:
+- command:
+  - cd $$BUILDPIPE_PROJECT_PATH
+  - make test
+  env:
+    BUILDPIPE_PROJECT_LABEL: project1
+    BUILDPIPE_PROJECT_PATH: project1/
+    BUILDPIPE_SCOPE: project
+  label: test project1
+- wait
+- agents:
+  - queue=build
+  branches: master
+  command:
+  - cd $$BUILDPIPE_PROJECT_PATH
+  - make build
+  - make publish-image
+  env:
+    BUILDPIPE_PROJECT_LABEL: project1
+    BUILDPIPE_PROJECT_PATH: project1/
+    BUILDPIPE_SCOPE: project
+  label: build project1
+- agents:
+  - queue=build
+  branches: master
+  command:
+  - cd $$BUILDPIPE_PROJECT_PATH
+  - make build
+  - make publish-image
+  env:
+    BUILDPIPE_PROJECT_LABEL: project2
+    BUILDPIPE_PROJECT_PATH: project2/
+    BUILDPIPE_SCOPE: project
+  label: build project2
+- wait
+- branches: master
+  command:
+  - make tag-release
+  label: tag
+- wait
+- branches: master
+  command:
+  - cd $$BUILDPIPE_PROJECT_PATH
+  - make deploy-staging
+  concurrency: 1
+  concurrency_group: deploy-stg
+  env:
+    BUILDPIPE_PROJECT_LABEL: project2
+    BUILDPIPE_PROJECT_PATH: project2/
+    BUILDPIPE_SCOPE: project
+  label: deploy-stg project2
+- wait
+- block: ':rocket: Release!'
+  branches: master
+- wait
+- branches: master
+  command:
+  - cd $$BUILDPIPE_PROJECT_PATH
+  - make deploy-prod
+  concurrency: 1
+  concurrency_group: deploy-prd
+  env:
+    BUILDPIPE_PROJECT_LABEL: project2
+    BUILDPIPE_PROJECT_PATH: project2/
+    BUILDPIPE_SCOPE: project
+  label: deploy-prd project2
+EOM
 }

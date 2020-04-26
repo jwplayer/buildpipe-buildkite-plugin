@@ -2,8 +2,7 @@ name: Buildpipe
 description: Dynamically generate Buildkite pipelines based on project changes
 author: https://github.com/ksindi
 requirements:
-  - python3
-  - pip3
+  - wget
 configuration:
   properties:
     default_branch:

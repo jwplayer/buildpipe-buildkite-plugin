@@ -38,6 +38,8 @@ steps:  # the same schema as regular buildkite pipeline steps
   - wait
   - label: deploy-stg
     branches: "master"
+    concurrency: 1
+    concurrency_group: deploy-stg
     env:
       BUILDPIPE_SCOPE: project
     command:
@@ -49,6 +51,8 @@ steps:  # the same schema as regular buildkite pipeline steps
   - wait
   - label: deploy-prd
     branches: "master"
+    concurrency: 1
+    concurrency_group: deploy-prd
     env:
       BUILDPIPE_SCOPE: project
     command:

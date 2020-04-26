@@ -15,7 +15,7 @@ Example
 steps:
   - label: ":buildkite:"
     plugins:
-      - jwplayer/buildpipe#v0.8.0:
+      - jwplayer/buildpipe#v0.9.0:
           dynamic_pipeline: dynamic_pipeline.yml
 ```
 
@@ -63,6 +63,8 @@ steps:  # the same schema as regular buildkite pipeline steps
   - wait
   - label: deploy-stg
     branches: "master"
+    concurrency: 1
+    concurrency_group: deploy-stg
     env:
       BUILDPIPE_SCOPE: project
     command:
@@ -74,6 +76,8 @@ steps:  # the same schema as regular buildkite pipeline steps
   - wait
   - label: deploy-prd
     branches: "master"
+    concurrency: 1
+    concurrency_group: deploy-prd
     env:
       BUILDPIPE_SCOPE: project
     command:
@@ -146,17 +150,13 @@ git log -m -1 --name-only --pretty=format: $BUILDKITE_COMMIT
 Requirements
 ------------
 
-Python3 is currently required, but we are [planning](https://github.com/jwplayer/buildpipe-buildkite-plugin/issues/43) to convert buildpipe to a binary using Go.
-
-Just make sure to install Python3 in your agent bootstrap script or Dockerfile.
+Only `wget` is required to download the binary.
 
 
 #### Cloudformation bootstrap script
 
 ```bash
-# Install python3
-yum -y install python3 python3-pip
-pip3 install -U setuptools wheel
+yum -y install wget
 ```
 
 #### Agent Dockerfile
@@ -164,9 +164,7 @@ pip3 install -U setuptools wheel
 ```
 FROM buildkite/agent:3.0
 
-RUN apk add --no-cache \
-  # Languages
-  python3 py-setuptools
+RUN apk add --no-cache wget
 ```
 
 
@@ -199,10 +197,4 @@ make test
 License
 -------
 
-MIT
-
-Acknowledgements
-----------------
-
-The rewrite to a plugin was inspired by
-[git-diff-conditional-buildkite-plugin](https://github.com/Zegocover/git-diff-conditional-buildkite-plugin).
+Apache v2
