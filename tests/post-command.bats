@@ -30,9 +30,10 @@ teardown() {
   refute_output --partial "label: deploy-prd project3"
   refute_output --partial "label: test project2"
   refute_output --partial "label: test project3"
+  IFS=''
   while read line
   do
-    assert_line --partial "$line"
+    assert_line "$line"
   done << EOM
 steps:
 - command:
