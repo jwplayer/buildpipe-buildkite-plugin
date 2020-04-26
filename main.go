@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -31,13 +30,6 @@ func NewConfig(filename string) *Config {
 	return &config
 }
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
 func getAffectedProjects(projects []Project, changedFiles []string) []Project {
 	affectedProjects := make([]Project, 0)
 	for _, project := range projects {
@@ -47,17 +39,6 @@ func getAffectedProjects(projects []Project, changedFiles []string) []Project {
 	}
 
 	return affectedProjects
-}
-
-func uploadPipeline(pipeline Pipeline) {
-	outfile := "pipeline_output.yml"
-	data, err := yaml.Marshal(&pipeline)
-	fmt.Printf("Pipeline:\n%s", string(data))
-	if err != nil {
-		log.Fatalf("Error writing outfile: %s\n", err)
-	}
-	err = ioutil.WriteFile(outfile, data, 0644)
-	execCommand("buildkite-agent", []string{"pipeline", "upload", outfile})
 }
 
 func main() {

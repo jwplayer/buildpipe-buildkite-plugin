@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/mohae/deepcopy"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 type Pipeline struct {
@@ -57,4 +60,15 @@ func generatePipeline(steps []interface{}, projects []Project) *Pipeline {
 	return &Pipeline{
 		Steps: generatedSteps,
 	}
+}
+
+func uploadPipeline(pipeline Pipeline) {
+	outfile := "pipeline_output.yml"
+	data, err := yaml.Marshal(&pipeline)
+	fmt.Printf("Pipeline:\n%s", string(data))
+	if err != nil {
+		log.Fatalf("Error writing outfile: %s\n", err)
+	}
+	err = ioutil.WriteFile(outfile, data, 0644)
+	execCommand("buildkite-agent", []string{"pipeline", "upload", outfile})
 }

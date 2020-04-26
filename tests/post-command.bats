@@ -32,11 +32,11 @@ teardown() {
   refute_output --partial "label: test project3"
   while read line
   do
-    assert_output --partial $line
+    assert_line --partial "$line"
   done << EOM
 steps:
 - command:
-  - cd $$BUILDPIPE_PROJECT_PATH
+  - cd \$\$BUILDPIPE_PROJECT_PATH
   - make test
   env:
     BUILDPIPE_PROJECT_LABEL: project1
@@ -48,7 +48,7 @@ steps:
   - queue=build
   branches: master
   command:
-  - cd $$BUILDPIPE_PROJECT_PATH
+  - cd \$\$BUILDPIPE_PROJECT_PATH
   - make build
   - make publish-image
   env:
@@ -60,7 +60,7 @@ steps:
   - queue=build
   branches: master
   command:
-  - cd $$BUILDPIPE_PROJECT_PATH
+  - cd \$\$BUILDPIPE_PROJECT_PATH
   - make build
   - make publish-image
   env:
@@ -76,7 +76,7 @@ steps:
 - wait
 - branches: master
   command:
-  - cd $$BUILDPIPE_PROJECT_PATH
+  - cd \$\$BUILDPIPE_PROJECT_PATH
   - make deploy-staging
   concurrency: 1
   concurrency_group: deploy-stg
@@ -91,7 +91,7 @@ steps:
 - wait
 - branches: master
   command:
-  - cd $$BUILDPIPE_PROJECT_PATH
+  - cd \$\$BUILDPIPE_PROJECT_PATH
   - make deploy-prod
   concurrency: 1
   concurrency_group: deploy-prd

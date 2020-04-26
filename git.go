@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 func dedupe(list []string) []string {
 	unique := make([]string, 0)
 	set := make(map[string]bool)
@@ -76,7 +83,6 @@ func getChangedFiles() []string {
 	}
 
 	log.Debugf("changedFiles: %s", changedFiles)
-	log.Debugf("len(changedFiles): %d", len(changedFiles))
 	uniqueFiles := dedupe(changedFiles)
 	return uniqueFiles
 }
