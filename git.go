@@ -60,12 +60,12 @@ func determineGitArgs(branch string, defaultBranch string) []string {
 }
 
 func index(slice []string, item string) int {
-    for i, _ := range slice {
-        if slice[i] == item {
-            return i
-        }
-    }
-    return -1
+	for i, _ := range slice {
+		if slice[i] == item {
+			return i
+		}
+	}
+	return -1
 }
 
 func getChangedFiles() []string {
@@ -74,8 +74,7 @@ func getChangedFiles() []string {
 	defaultBranch := getEnv(pluginPrefix+"DEFAULT_BRANCH", "master")
 
 	cmdArgs := determineGitArgs(branch, defaultBranch)
-	out := execCommand("git", cmdArgs)
-	changedFiles := strings.Split(strings.TrimSpace(out), "\n")
+	changedFiles := strings.Split(execCommand("git", cmdArgs), "\n")
 
 	if branch == defaultBranch {
 		firstMergeBreak := index(changedFiles, "")
