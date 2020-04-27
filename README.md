@@ -151,6 +151,27 @@ Requirements
 
 Only `curl` is required to download the binary.
 
+Installing buildpipe
+--------------------
+
+You can also install buildpipe in the agent bootstrap script:
+
+```bash
+curl -Lf -o /usr/local/bin/buildpipe https://github.com/jwplayer/buildpipe-buildkite-plugin/releases/download/v${BUILDPIPE_VERSION}/buildpipe-linux \
+  && chmod +x /usr/local/bin/buildpipe
+```
+
+Your initial pipeline would need to pass the options as environment variables with prefix `BUILDKITE_PLUGIN_BUILDPIPE_`. For example:
+
+```yml
+steps:
+  - label: "buildpipe"
+    command: buildpipe
+    env:
+      BUILDKITE_PLUGIN_BUILDPIPE_DYNAMIC_PIPELINE: path/to/dynamic_pipeline.yml
+      BUILDKITE_PLUGIN_BUILDPIPE_LOG_LEVEL: debug
+```
+
 Troubleshooting
 ---------------
 
