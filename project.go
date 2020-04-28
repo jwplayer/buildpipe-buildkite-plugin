@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+func Min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
 // https://github.com/go-yaml/yaml/issues/100
 type StringArray []string
 
@@ -54,11 +61,8 @@ func (p *Project) checkAffected(changedFiles []string) bool {
 		normalizedPath := path.Clean(filePath)
 		projectDirs := strings.Split(normalizedPath, "/")
 		for _, changedFile := range changedFiles {
-			if changedFile == "" {
-				continue
-			}
 			changedDirs := strings.Split(changedFile, "/")
-			if reflect.DeepEqual(changedDirs[:len(projectDirs)], projectDirs) {
+			if reflect.DeepEqual(changedDirs[:Min(len(projectDirs), len(changedDirs))], projectDirs) {
 				return true
 			}
 		}
