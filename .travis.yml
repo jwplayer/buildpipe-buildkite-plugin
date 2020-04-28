@@ -1,5 +1,9 @@
 sudo: required
 
+language: go
+before_script:
+  - go vet ./...
+
 services:
   - docker
 
