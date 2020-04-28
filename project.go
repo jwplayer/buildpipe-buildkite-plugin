@@ -8,10 +8,10 @@ import (
 )
 
 func Min(x, y int) int {
- if x < y {
-   return x
- }
- return y
+	if x < y {
+		return x
+	}
+	return y
 }
 
 // https://github.com/go-yaml/yaml/issues/100
