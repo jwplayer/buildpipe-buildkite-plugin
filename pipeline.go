@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/mohae/deepcopy"
 	log "github.com/sirupsen/logrus"
@@ -63,12 +64,20 @@ func generatePipeline(steps []interface{}, projects []Project) *Pipeline {
 }
 
 func uploadPipeline(pipeline Pipeline) {
-	outfile := "pipeline_output.yml"
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "buildpipe-")
+	if err != nil {
+		log.Fatalf("Cannot create temporary file: %s\n", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
 	data, err := yaml.Marshal(&pipeline)
+
 	fmt.Printf("Pipeline:\n%s", string(data))
+
+	err = ioutil.WriteFile(tmpFile.Name(), data, 0644)
 	if err != nil {
 		log.Fatalf("Error writing outfile: %s\n", err)
 	}
-	err = ioutil.WriteFile(outfile, data, 0644)
-	execCommand("buildkite-agent", []string{"pipeline", "upload", outfile})
+
+	execCommand("buildkite-agent", []string{"pipeline", "upload", tmpFile.Name()})
 }
