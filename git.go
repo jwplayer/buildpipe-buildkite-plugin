@@ -32,9 +32,11 @@ func dedupe(list []string) []string {
 func execCommand(program string, args []string) string {
 	cmd := exec.Command(program, args...)
 	var out bytes.Buffer
+	var stderr bytes.Buffer
 	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("Error running command: %s\n", err)
+		log.Fatalf(fmt.Sprint(err) + ": " + stderr.String())
 	}
 	return out.String()
 }
