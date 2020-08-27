@@ -26,6 +26,14 @@ func generateProjectSteps(step interface{}, projects []Project) []interface{} {
 			env["BUILDPIPE_PROJECT_LABEL"] = project.Label
 			env["BUILDPIPE_PROJECT_PATH"] = project.getMainPath()
 
+			if val, ok := stepCopyMap["key"]; ok {
+				stepCopyMap["key"] = fmt.Sprintf("%s-%s", val, project.Label)
+			}
+
+			if val, ok := stepCopyMap["depends_on"]; ok {
+				stepCopyMap["key"] = fmt.Sprintf("%s-%s", val, project.Label)
+			}
+
 			projectSteps = append(projectSteps, stepCopy)
 		}
 	}
