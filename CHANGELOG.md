@@ -1,16 +1,21 @@
 # Changelog
 
+0.9.1 (ksindi)
+--------------
+
+1. Capture and log stderr on Buildkite pipeline upload failure.
+
 0.9.0 (ksindi)
 --------------
 
-* Rewrite plugin in Go
-* Change license to Apache 2
+1. Rewrite plugin in Go
+2. Change license to Apache 2
 
 0.8.0 (ksindi)
 --------------
 
-* Projects are now defined in the dynamic_pipeline.yml file and not the initial pipeline. This allow define most configuration changes in one file.
-* The diff command has been split into two commands to give more flexibility on whether you are specifying the default branch or a non-default branch.
+1. Projects are now defined in the dynamic_pipeline.yml file and not the initial pipeline. This allow define most configuration changes in one file.
+2. The diff command has been split into two commands to give more flexibility on whether you are specifying the default branch or a non-default branch.
 
 0.7.0 (ksindi)
 --------------

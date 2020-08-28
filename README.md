@@ -15,7 +15,7 @@ Example
 steps:
   - label: ":buildkite:"
     plugins:
-      - jwplayer/buildpipe#v0.9.0:
+      - jwplayer/buildpipe#v0.9.1:
           dynamic_pipeline: dynamic_pipeline.yml
 ```
 
