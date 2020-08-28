@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func getEnv(key, fallback string) string {
