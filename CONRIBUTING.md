@@ -11,4 +11,4 @@ please follow it in all your interactions with the project.
 1. Update documentation and `hook/command` to new version number.
 1. Run `make build` to generate `buildpipe-linux` binary.
 1. Add notes to `CHANGELOG.md`.
-1. Create a new release in GitHub.
+1. Create a new release in GitHub. Attach `buildpipe-linux` binary.
