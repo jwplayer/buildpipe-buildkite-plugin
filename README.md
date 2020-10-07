@@ -114,11 +114,11 @@ Configuration
 
 ### Project schema
 
-| Option | Required | Type   | Default | Description                           |
-| ------ | -------- | ------ | ------- | ------------------------------------- |
-| label  | Yes      | string |         | Project label                         |
-| path   | Yes      | array  |         | The path(s) that specify changes to a project |
-| skip   | No       | array  |         | Exclude steps that have labels that match the rule |
+| Option | Required | Type   | Default | Description                           | Environment variable |
+| ------ | -------- | ------ | ------- | ------------------------------------- | -------------------- |
+| label  | Yes      | string |         | Project label                         | `BUILDPIPE_PROJECT_LABEL` |
+| path   | Yes      | array  |         | The path(s) that specify changes to a project | `BUILDPIPE_PROJECT_PATH` |
+| skip   | No       | array  |         | Exclude steps that have labels that match the rule |         |
 
 Other useful things to note:
 
@@ -126,6 +126,7 @@ Other useful things to note:
     .gitignore files for inspiration)
 -   If multiple paths are specified, the environment variable
     `BUILDPIPE_PROJECT_PATH` will be the first path.
+-   Environment variables are available in the pipeline step.
 
 `diff_` commands
 ----------------
