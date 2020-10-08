@@ -53,6 +53,7 @@ steps:  # the same schema as regular buildkite pipeline steps
       - cd $$BUILDPIPE_PROJECT_PATH
       - make build
       - make publish-image
+      - echo "$$BUILDPIPE_PROJECT_LABEL: New image was successfully published!"
     agents:
       - queue=build
   - wait
@@ -94,6 +95,8 @@ The above pipelines specify the following:
 -   The env variable `BUILDPIPE_PROJECT_PATH` is created by buildpipe as
     the project\'s path. If multiple paths are specified for a project,
     it\'s the first path.
+-   The env variable `BUILDPIPE_PROJECT_LABEL` is created by buildpipe 
+    as the project\'s label.
 
 ### Full working example
 
