@@ -11,8 +11,8 @@ import (
 const pluginPrefix = "BUILDKITE_PLUGIN_BUILDPIPE_"
 
 type Config struct {
-	Projects []Project     `yaml:"projects"`
-	Steps    []interface{} `yaml:"steps"`
+	Projects []Project         `yaml:"projects"`
+	Steps    []interface{}     `yaml:"steps"`
 	Env      map[string]string `yaml:"env"`
 }
 

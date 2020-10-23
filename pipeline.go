@@ -11,7 +11,7 @@ import (
 )
 
 type Pipeline struct {
-	Steps []interface{} `yaml:"steps"`
+	Steps []interface{}   `yaml:"steps"`
 	Env map[string]string `yaml:"env"`
 }
 
