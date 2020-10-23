@@ -28,7 +28,7 @@ steps: # the same schema as regular buildkite pipeline steps
     branches: "master"
     env:
       BUILDPIPE_SCOPE: project
-      TEST_ENV_STEP: test-step1
+      TEST_ENV_STEP: test-step
     command:
       - cd $$BUILDPIPE_PROJECT_PATH
       - make build
