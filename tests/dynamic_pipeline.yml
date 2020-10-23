@@ -1,11 +1,11 @@
 env:
-  - TEST_ENV_PIPELINE: test-pipeline
+  TEST_ENV_PIPELINE: test-pipeline
 projects:
  - label: project1
    path: project1/  # changes in this dir will trigger steps for project1
    skip: deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
    env:
-     - TEST_ENV_PROJECT: test-project
+     TEST_ENV_PROJECT: test-project
  - label: project2
    skip: test
    path:
