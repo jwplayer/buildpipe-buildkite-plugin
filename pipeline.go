@@ -38,7 +38,7 @@ func generateProjectSteps(step interface{}, projects []Project) []interface{} {
 	return projectSteps
 }
 
-func generatePipeline(steps []interface{}, pipelineEnv []interface{}, projects []Project) *Pipeline {
+func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projects []Project) *Pipeline {
 	generatedSteps := make([]interface{}, 0)
 
 	for _, step := range steps {
@@ -54,6 +54,10 @@ func generatePipeline(steps []interface{}, pipelineEnv []interface{}, projects [
 			continue
 		}
 
+		for envName, envVal := range pipelineEnv {
+			env[envName] = envVal
+		}
+
 		value, ok := env["BUILDPIPE_SCOPE"]
 		if ok && value == "project" {
 			projectSteps := generateProjectSteps(step, projects)
@@ -63,21 +67,9 @@ func generatePipeline(steps []interface{}, pipelineEnv []interface{}, projects [
 		}
 	}
 
-	generatedSteps = addPipelineEnv(generatedSteps, pipelineEnv)
-
 	return &Pipeline{
 		Steps: generatedSteps,
 	}
-}
-
-func addPipelineEnv(steps []interface{}, pipelineEnv []interface{}) []interface{} {
-	for envName, envValue := range pipelineEnv {
-		for step := range steps {
-			step.env[envName] = envValue
-		}
-	}
-
-	return steps
 }
 
 func uploadPipeline(pipeline Pipeline) {

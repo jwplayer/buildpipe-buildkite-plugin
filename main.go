@@ -13,7 +13,7 @@ const pluginPrefix = "BUILDKITE_PLUGIN_BUILDPIPE_"
 type Config struct {
 	Projects []Project     `yaml:"projects"`
 	Steps    []interface{} `yaml:"steps"`
-	Env      []interface{} `yaml:"env"`
+	Env      map[string]string `yaml:"env"`
 }
 
 func NewConfig(filename string) *Config {
