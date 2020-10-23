@@ -63,9 +63,21 @@ func generatePipeline(steps []interface{}, pipelineEnv []interface{}, projects [
 		}
 	}
 
+	generatedSteps = addPipelineEnv(generatedSteps, pipelineEnv)
+
 	return &Pipeline{
 		Steps: generatedSteps,
 	}
+}
+
+func addPipelineEnv(steps []interface{}, pipelineEnv []interface{}) []interface{} {
+	for envName, envValue := range pipelineEnv {
+		for step := range steps {
+			step.env[envName] = envValue
+		}
+	}
+
+	return steps
 }
 
 func uploadPipeline(pipeline Pipeline) {
