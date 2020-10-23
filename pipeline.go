@@ -26,6 +26,10 @@ func generateProjectSteps(step interface{}, projects []Project) []interface{} {
 			env["BUILDPIPE_PROJECT_LABEL"] = project.Label
 			env["BUILDPIPE_PROJECT_PATH"] = project.getMainPath()
 
+			for envVarName, envVarValue := range project.Env {
+				env[envVarName] = envVarValue
+			}
+
 			projectSteps = append(projectSteps, stepCopy)
 		}
 	}
