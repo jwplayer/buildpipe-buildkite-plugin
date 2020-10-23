@@ -64,7 +64,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	pipeline := generatePipeline(config.Steps, affectedProjects)
+	pipeline := generatePipeline(config.Steps, config.Env, affectedProjects)
 
 	uploadPipeline(*pipeline)
 }
