@@ -43,6 +43,8 @@ steps:
     BUILDPIPE_PROJECT_LABEL: project1
     BUILDPIPE_PROJECT_PATH: project1/
     BUILDPIPE_SCOPE: project
+    TEST_ENV_PIPELINE: test-pipeline
+    TEST_ENV_PROJECT: test-project
   label: test project1
 - wait
 - agents:
@@ -56,6 +58,9 @@ steps:
     BUILDPIPE_PROJECT_LABEL: project1
     BUILDPIPE_PROJECT_PATH: project1/
     BUILDPIPE_SCOPE: project
+    TEST_ENV_PIPELINE: test-pipeline
+    TEST_ENV_PROJECT: test-project
+    TEST_ENV_STEP: test-step
   label: build project1
 - agents:
   - queue=build
@@ -68,6 +73,8 @@ steps:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
     BUILDPIPE_SCOPE: project
+    TEST_ENV_PIPELINE: test-pipeline
+    TEST_ENV_STEP: test-step
   label: build project2
 - wait
 - branches: master
@@ -85,6 +92,7 @@ steps:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
     BUILDPIPE_SCOPE: project
+    TEST_ENV_PIPELINE: test-pipeline
   label: deploy-stg project2
 - wait
 - block: ':rocket: Release!'
@@ -100,6 +108,7 @@ steps:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
     BUILDPIPE_SCOPE: project
+    TEST_ENV_PIPELINE: test-pipeline
   label: deploy-prd project2
 EOM
 }
