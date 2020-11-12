@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -51,16 +52,27 @@ func main() {
 	log.SetLevel(ll)
 
 	config := NewConfig(os.Getenv(pluginPrefix + "DYNAMIC_PIPELINE"))
-	changedFiles := getChangedFiles()
-	if len(changedFiles) == 0 {
-		log.Info("No files were changed")
-		os.Exit(0)
+
+	allProjects, err := strconv.ParseBool(getEnv(pluginPrefix+"ALL_PROJECTS", "false"))
+	if err != nil {
+		log.Fatalf("Error parsing %s: %s\n", pluginPrefix+"ALL_PROJECTS", err)
 	}
 
-	affectedProjects := getAffectedProjects(config.Projects, changedFiles)
-	if len(affectedProjects) == 0 {
-		log.Info("No project was affected from git changes")
-		os.Exit(0)
+	var affectedProjects []Project
+	if allProjects {
+		affectedProjects = config.Projects
+	} else {
+		changedFiles := getChangedFiles()
+		if len(changedFiles) == 0 {
+			log.Info("No files were changed")
+			os.Exit(0)
+		}
+
+		affectedProjects = getAffectedProjects(config.Projects, changedFiles)
+		if len(affectedProjects) == 0 {
+			log.Info("No project was affected from git changes")
+			os.Exit(0)
+		}
 	}
 
 	pipeline := generatePipeline(config.Steps, affectedProjects)
