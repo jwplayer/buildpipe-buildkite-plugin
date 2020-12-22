@@ -11,7 +11,7 @@ import (
 )
 
 type Pipeline struct {
-	Steps []interface{}     `yaml:"steps"`
+	Steps []interface{} `yaml:"steps"`
 }
 
 func generateProjectSteps(step interface{}, projects []Project) []interface{} {
