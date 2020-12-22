@@ -31,10 +31,8 @@ teardown() {
   refute_output --partial "label: test project2"
   refute_output --partial "label: test project3"
   IFS=''
-  while read line
-  do
-    assert_line "$line"
-  done << EOM
+
+  assert_output --partial << EOM
 steps:
 - command:
   - cd \$\$BUILDPIPE_PROJECT_PATH
@@ -80,6 +78,8 @@ steps:
 - branches: master
   command:
   - make tag-release
+  env:
+    TEST_ENV_PIPELINE: test-pipeline
   label: tag
 - wait
 - branches: master
