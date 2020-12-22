@@ -12,7 +12,6 @@ import (
 
 type Pipeline struct {
 	Steps []interface{}     `yaml:"steps"`
-	Env   map[string]string `yaml:"env"`
 }
 
 func generateProjectSteps(step interface{}, projects []Project) []interface{} {
@@ -48,14 +47,18 @@ func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projec
 			continue
 		}
 
-		env, ok := stepMap["env"].(map[interface{}]interface{})
-		if !ok {
-			env = make(map[interface{}]interface{})
-			stepMap["env"] = env
-		}
+		env, foundEnv := stepMap["env"].(map[interface{}]interface{})
+		_, foundBlockStep := stepMap["block"].(string)
 
-		for envVarName, envVarValue := range pipelineEnv {
-			env[envVarName] = envVarValue
+		if !foundBlockStep {
+			if !foundEnv {
+				env = make(map[interface{}]interface{})
+				stepMap["env"] = env
+			}
+
+			for envVarName, envVarValue := range pipelineEnv {
+				env[envVarName] = envVarValue
+			}
 		}
 
 		value, ok := env["BUILDPIPE_SCOPE"]
