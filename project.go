@@ -37,6 +37,7 @@ type Project struct {
 	Label string
 	Path  StringArray
 	Skip  StringArray
+	Env   map[string]string
 }
 
 func (p *Project) getMainPath() string {

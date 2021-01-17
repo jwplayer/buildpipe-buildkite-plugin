@@ -26,6 +26,10 @@ func generateProjectSteps(step interface{}, projects []Project) []interface{} {
 			env["BUILDPIPE_PROJECT_LABEL"] = project.Label
 			env["BUILDPIPE_PROJECT_PATH"] = project.getMainPath()
 
+			for envVarName, envVarValue := range project.Env {
+				env[envVarName] = envVarValue
+			}
+
 			projectSteps = append(projectSteps, stepCopy)
 		}
 	}
@@ -33,7 +37,7 @@ func generateProjectSteps(step interface{}, projects []Project) []interface{} {
 	return projectSteps
 }
 
-func generatePipeline(steps []interface{}, projects []Project) *Pipeline {
+func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projects []Project) *Pipeline {
 	generatedSteps := make([]interface{}, 0)
 
 	for _, step := range steps {
@@ -43,10 +47,18 @@ func generatePipeline(steps []interface{}, projects []Project) *Pipeline {
 			continue
 		}
 
-		env, ok := stepMap["env"].(map[interface{}]interface{})
-		if !ok {
-			generatedSteps = append(generatedSteps, step)
-			continue
+		env, foundEnv := stepMap["env"].(map[interface{}]interface{})
+		_, foundBlockStep := stepMap["block"].(string)
+
+		if !foundBlockStep {
+			if !foundEnv {
+				env = make(map[interface{}]interface{})
+				stepMap["env"] = env
+			}
+
+			for envVarName, envVarValue := range pipelineEnv {
+				env[envVarName] = envVarValue
+			}
 		}
 
 		value, ok := env["BUILDPIPE_SCOPE"]

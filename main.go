@@ -11,8 +11,9 @@ import (
 const pluginPrefix = "BUILDKITE_PLUGIN_BUILDPIPE_"
 
 type Config struct {
-	Projects []Project     `yaml:"projects"`
-	Steps    []interface{} `yaml:"steps"`
+	Projects []Project         `yaml:"projects"`
+	Steps    []interface{}     `yaml:"steps"`
+	Env      map[string]string `yaml:"env"`
 }
 
 func NewConfig(filename string) *Config {
@@ -63,7 +64,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	pipeline := generatePipeline(config.Steps, affectedProjects)
+	pipeline := generatePipeline(config.Steps, config.Env, affectedProjects)
 
 	uploadPipeline(*pipeline)
 }
