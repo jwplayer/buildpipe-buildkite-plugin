@@ -15,19 +15,23 @@ Example
 steps:
   - label: ":buildkite:"
     plugins:
-      - jwplayer/buildpipe#v0.9.1:
+      - jwplayer/buildpipe#v0.9.2:
           dynamic_pipeline: dynamic_pipeline.yml
 ```
 
 ### dynamic\_pipeline.yml
 
 ```yaml
+env:
+  GLOBAL_ENV_VAR: test
 projects:
  - label: project1
    path: project1/  # changes in this directory will trigger steps for project1
    skip:
      - deploy*  # skip steps with label matching deploy* (e.g. deploy-prd)
      - test
+   env:
+     PROJECT_ENV_VAR: project1variable
  - label: project2
    skip: test
    path:
@@ -94,6 +98,10 @@ The above pipelines specify the following:
 -   The env variable `BUILDPIPE_PROJECT_PATH` is created by buildpipe as
     the project\'s path. If multiple paths are specified for a project,
     it\'s the first path.
+-   There is a global environment variable defined (`GLOBAL_ENV_VAR`).
+    This variable will be added to every step in the pipeline.
+-   There is also a project scoped environment variable defined (`PROJECT_ENV_VAR`).
+    That variable will be added to all steps of the project where it was defined (`project1`).
 
 ### Full working example
 
@@ -114,19 +122,44 @@ Configuration
 
 ### Project schema
 
-| Option | Required | Type   | Default | Description                           | Environment variable |
-| ------ | -------- | ------ | ------- | ------------------------------------- | -------------------- |
-| label  | Yes      | string |         | Project label                         | `BUILDPIPE_PROJECT_LABEL` |
-| path   | Yes      | array  |         | The path(s) that specify changes to a project | `BUILDPIPE_PROJECT_PATH` |
-| skip   | No       | array  |         | Exclude steps that have labels that match the rule |         |
+| Option | Required | Type        | Default | Description                           | Environment variable |
+| ------ | -------- | ----------- | ------- | ------------------------------------- | -------------------- |
+| label  | Yes      | string      |         | Project label                         | `BUILDPIPE_PROJECT_LABEL` |
+| path   | Yes      | array       |         | The path(s) that specify changes to a project | `BUILDPIPE_PROJECT_PATH` |
+| skip   | No       | array       |         | Exclude steps that have labels that match the rule |         |
+| env    | No       | dictionary  |         | Define environment variable on a project scope |         |
 
 Other useful things to note:
 
--   Option `skip` make use of Unix shell-style wildcards (Look at
+-   Option `skip` makes use of Unix shell-style wildcards (Look at
     .gitignore files for inspiration)
 -   If multiple paths are specified, the environment variable
     `BUILDPIPE_PROJECT_PATH` will be the first path.
 -   Environment variables are available in the pipeline step.
+
+### Environment Variables
+
+Since version 0.9.2, there is the option to define environment variables on different scope levels in the pipeline.
+Buildkite already supports environment variables defined on a step scope, but buildpipe adds the ability to define global
+and also project specific environment variables.
+
+#### Project env vars
+```yaml
+env:
+  THIS_IS_A_GLOBAL_ENV_VAR: global
+  GLOBAL_ENV_VAR_2: another_global_value
+projects:
+  - label: project1
+    path: project1/
+    env:
+      THIS_IS_A_PROJECT_ENV_VAR: project_scoped
+      PROJECT_ENV_VAR_2: second_env_var_value
+  - label: project2
+    ...
+steps:
+  - label: step1
+    ...
+```
 
 `diff_` commands
 ----------------
