@@ -47,8 +47,8 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 
 				for i, dependency := range dependencyList {
 					depStr := dependency.(string)
-					step := findStepByKey(steps, depStr)
-					if step != nil {
+
+					if step := findStepByKey(steps, depStr); step != nil {
 						if isProjectScopeStep(step) {
 							dependencyList[i] = fmt.Sprintf("%s %s", depStr, project.Label)
 						}
