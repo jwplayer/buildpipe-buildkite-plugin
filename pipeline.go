@@ -47,8 +47,11 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 
 				for i, dependency := range dependencyList {
 					depStr := dependency.(string)
-					if isProjectScopeStep(steps, depStr) {
-						dependencyList[i] = fmt.Sprintf("%s %s", depStr, project.Label)
+					step := findStepByKey(steps, depStr)
+					if step != nil {
+						if isProjectScopeStep(step) {
+							dependencyList[i] = fmt.Sprintf("%s %s", depStr, project.Label)
+						}
 					}
 				}
 			}
@@ -59,10 +62,11 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 	return projectSteps
 }
 
-func isProjectScopeStep(steps []interface{}, stepKey string) bool {
-	step := findStepByKey(steps, stepKey)
-	if step != nil {
-		return isProjectStep(step)
+func isProjectScopeStep(step map[interface{}]interface{}) bool {
+	if env, ok := step["env"].(map[interface{}]interface{}); ok {
+		if value, ok := env["BUILDPIPE_SCOPE"]; ok {
+			return value == "project"
+		}
 	}
 	return false
 }
@@ -81,15 +85,6 @@ func findStepByKey(steps []interface{}, stepKey string) map[interface{}]interfac
 		}
 	}
 	return nil
-}
-
-func isProjectStep(step map[interface{}]interface{}) bool {
-	if env, ok := step["env"].(map[interface{}]interface{}); ok {
-		if value, ok := env["BUILDPIPE_SCOPE"]; ok {
-			return value == "project"
-		}
-	}
-	return false
 }
 
 func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projects []Project) *Pipeline {
