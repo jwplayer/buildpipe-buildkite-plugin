@@ -47,6 +47,7 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 				dependencyList, ok := val.([]interface{})
 				if !ok {
 				    dependencyList = []interface{}{val}
+				    stepCopyMap["depends_on"] = dependencyList
 				}
 
 				for i, dependency := range dependencyList {
@@ -54,7 +55,7 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 
 					if step := findStepByKey(steps, depStr); step != nil {
 						if isProjectScopeStep(step) {
-							dependencyList[i] = fmt.Sprintf("%s %s", depStr, project.Label)
+							dependencyList[i] = fmt.Sprintf("%s:%s", depStr, project.Label)
 						}
 					}
 				}
