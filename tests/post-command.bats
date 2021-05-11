@@ -49,7 +49,7 @@ steps:
     BUILDPIPE_SCOPE: project
     TEST_ENV_PIPELINE: test-pipeline
     TEST_ENV_PROJECT: test-project
-  key: test project1
+  key: test:project1
   label: test project1
 - wait
 - agents:
@@ -106,7 +106,7 @@ steps:
     BUILDPIPE_PROJECT_PATH: project2/
     BUILDPIPE_SCOPE: project
     TEST_ENV_PIPELINE: test-pipeline
-  key: deploy-stg project2
+  key: deploy-stg:project2
   label: deploy-stg project2
 - wait
 - block: ':rocket: Release!'
@@ -119,7 +119,7 @@ steps:
   concurrency: 1
   concurrency_group: deploy-prd
   depends_on:
-  - deploy-stg project2
+  - deploy-stg:project2
   env:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
