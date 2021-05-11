@@ -36,21 +36,26 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 
 			// Unique project level key, if present
 			if val, ok := stepCopyMap["key"]; ok {
-				stepCopyMap["key"] = fmt.Sprintf("%s %s", val, project.Label)
+				stepCopyMap["key"] = fmt.Sprintf("%s:%s", val, project.Label)
 			}
 
 			// If the step includes a depends_on clause, we need to validate whether each dependency
 			// is a project-scoped step. If so, the dependency has the current project name added
 			// to it to match the unique key given above.
 			if val, ok := stepCopyMap["depends_on"]; ok {
-				dependencyList := val.([]interface{})
+				// depends_on can be an array or a string
+				dependencyList, ok := val.([]interface{})
+				if !ok {
+					dependencyList = []interface{}{val}
+					stepCopyMap["depends_on"] = dependencyList
+				}
 
 				for i, dependency := range dependencyList {
 					depStr := dependency.(string)
 
 					if step := findStepByKey(steps, depStr); step != nil {
 						if isProjectScopeStep(step) {
-							dependencyList[i] = fmt.Sprintf("%s %s", depStr, project.Label)
+							dependencyList[i] = fmt.Sprintf("%s:%s", depStr, project.Label)
 						}
 					}
 				}

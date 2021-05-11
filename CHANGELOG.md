@@ -1,9 +1,15 @@
 # Changelog
 
+0.9.4 (TBoshoven)
+-----------------
+
+1. Fix space-separation in step keys.
+2. Fix parsing when `depends_on` is a string instead of an array.
+
 0.9.3 (boyntoni)
 ----------------
 
-1. Generate unique keys for project steps, and add support for depends_on.
+1. Generate unique keys for project steps, and add support for `depends_on`.
 
 
 0.9.2 (mowies)

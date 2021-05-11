@@ -67,8 +67,7 @@ steps: # the same schema as regular buildkite pipeline steps
     branches: "master"
     concurrency: 1
     concurrency_group: deploy-prd
-    depends_on:
-      - deploy-stg
+    depends_on: deploy-stg
     env:
       BUILDPIPE_SCOPE: project
     command:
