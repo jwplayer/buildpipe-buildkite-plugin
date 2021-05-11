@@ -35,6 +35,12 @@ teardown() {
   assert_output --partial << EOM
 steps:
 - command:
+  - make bootstrap
+  env:
+    TEST_ENV_PIPELINE: test-pipeline
+  key: bootstrap
+  label: bootstrap
+- command:
   - cd \$\$BUILDPIPE_PROJECT_PATH
   - make test
   env:
@@ -43,6 +49,7 @@ steps:
     BUILDPIPE_SCOPE: project
     TEST_ENV_PIPELINE: test-pipeline
     TEST_ENV_PROJECT: test-project
+  key: test project1
   label: test project1
 - wait
 - agents:
@@ -52,6 +59,9 @@ steps:
   - cd \$\$BUILDPIPE_PROJECT_PATH
   - make build
   - make publish-image
+  depends_on:
+  - bootstrap
+  - test project1
   env:
     BUILDPIPE_PROJECT_LABEL: project1
     BUILDPIPE_PROJECT_PATH: project1/
@@ -67,6 +77,9 @@ steps:
   - cd \$\$BUILDPIPE_PROJECT_PATH
   - make build
   - make publish-image
+  depends_on:
+  - bootstrap
+  - test project2
   env:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
@@ -93,6 +106,7 @@ steps:
     BUILDPIPE_PROJECT_PATH: project2/
     BUILDPIPE_SCOPE: project
     TEST_ENV_PIPELINE: test-pipeline
+  key: deploy-stg project2
   label: deploy-stg project2
 - wait
 - block: ':rocket: Release!'
@@ -104,6 +118,8 @@ steps:
   - make deploy-prod
   concurrency: 1
   concurrency_group: deploy-prd
+  depends_on:
+  - deploy-stg project2
   env:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
