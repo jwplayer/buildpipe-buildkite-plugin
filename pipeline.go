@@ -43,19 +43,14 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 			// is a project-scoped step. If so, the dependency has the current project name added
 			// to it to match the unique key given above.
 			if val, ok := stepCopyMap["depends_on"]; ok {
-				scopedDeps := make([]string, 0)
 				dependencyList := val.([]interface{})
 
-				for _, dependency := range dependencyList {
+				for i, dependency := range dependencyList {
 					depStr := dependency.(string)
-					if isDependencyProjectScopeStep(steps, depStr) {
-						scopedDeps = append(scopedDeps, fmt.Sprintf("%s %s", depStr, project.Label))
-					} else {
-						scopedDeps = append(scopedDeps, depStr)
+					if isProjectScopeStep(steps, depStr) {
+						dependencyList[i] = fmt.Sprintf("%s %s", depStr, project.Label)
 					}
 				}
-
-				stepCopyMap["depends_on"] = scopedDeps
 			}
 			projectSteps = append(projectSteps, stepCopy)
 		}
@@ -64,7 +59,15 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 	return projectSteps
 }
 
-func isDependencyProjectScopeStep(steps []interface{}, dependencyName string) bool {
+func isProjectScopeStep(steps []interface{}, stepKey string) bool {
+	step := findStepByKey(steps, stepKey)
+	if step != nil {
+		return isProjectStep(step)
+	}
+	return false
+}
+
+func findStepByKey(steps []interface{}, stepKey string) map[interface{}]interface{} {
 	for _, step := range steps {
 		// skip wait commands
 		stepMap, ok := step.(map[interface{}]interface{})
@@ -72,13 +75,18 @@ func isDependencyProjectScopeStep(steps []interface{}, dependencyName string) bo
 			continue
 		}
 		// grab key if it has one and check whether it is project scoped
-		stepKey, ok := stepMap["key"]
-		if ok && stepKey == dependencyName {
-			if env, ok := stepMap["env"].(map[interface{}]interface{}); ok {
-				if value, ok := env["BUILDPIPE_SCOPE"]; ok {
-					return value == "project"
-				}
-			}
+		foundStepKey, ok := stepMap["key"]
+		if ok && stepKey == foundStepKey {
+			return stepMap
+		}
+	}
+	return nil
+}
+
+func isProjectStep(step map[interface{}]interface{}) bool {
+	if env, ok := step["env"].(map[interface{}]interface{}); ok {
+		if value, ok := env["BUILDPIPE_SCOPE"]; ok {
+			return value == "project"
 		}
 	}
 	return false
