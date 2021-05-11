@@ -61,7 +61,7 @@ steps:
   - make publish-image
   depends_on:
   - bootstrap
-  - test project1
+  - test:project1
   env:
     BUILDPIPE_PROJECT_LABEL: project1
     BUILDPIPE_PROJECT_PATH: project1/
@@ -79,7 +79,7 @@ steps:
   - make publish-image
   depends_on:
   - bootstrap
-  - test project2
+  - test:project2
   env:
     BUILDPIPE_PROJECT_LABEL: project2
     BUILDPIPE_PROJECT_PATH: project2/
