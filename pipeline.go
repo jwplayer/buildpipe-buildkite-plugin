@@ -43,7 +43,7 @@ func generateProjectSteps(steps []interface{}, step interface{}, projects []Proj
 			// is a project-scoped step. If so, the dependency has the current project name added
 			// to it to match the unique key given above.
 			if val, ok := stepCopyMap["depends_on"]; ok {
-				var scopedDeps = make([]string, 0)
+				scopedDeps := make([]string, 0)
 				dependencyList := val.([]interface{})
 
 				for _, dependency := range dependencyList {
