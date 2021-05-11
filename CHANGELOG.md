@@ -1,5 +1,11 @@
 # Changelog
 
+0.9.3 (boyntoni)
+----------------
+
+1. Generate unique keys for project steps, and add support for depends_on.
+
+
 0.9.2 (mowies)
 --------------
 1. Add option to set pipeline and project scoped environment variables.
