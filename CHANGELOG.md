@@ -1,5 +1,10 @@
 # Changelog
 
+0.10.0 (boyntoni)
+-----------------
+
+1. Add support for building projects from a specified list
+
 0.9.4 (TBoshoven)
 -----------------
 

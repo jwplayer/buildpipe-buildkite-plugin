@@ -161,6 +161,23 @@ steps:
     ...
 ```
 
+### Specifying build projects
+
+Since version 0.10.0, you can manually specify which projects you wish to build using the `BUILDKITE_PLUGIN_BUILDPIPE_BUILD_PROJECTS` environment variable.
+If this environemnt variable is provided, it will take precedence over any existing `git` diff. You can specify the build projects in one of two ways:
+
+1. Specify a list of build projects as a comma-separated list of project labels. For example:
+
+```bash
+BUILDKITE_PLUGIN_BUILDPIPE_BUILD_PROJECTS="project1,project2"
+```
+
+2. Build all projects in a Buildpipe configuration:
+
+```bash
+BUILDKITE_PLUGIN_BUILDPIPE_BUILD_PROJECTS="*"
+```
+
 `diff_` commands
 ----------------
 
