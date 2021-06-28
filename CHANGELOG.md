@@ -3,7 +3,7 @@
 0.10.0 (boyntoni)
 -----------------
 
-1. Add support for building projects from a specified list
+1. Add support for manually specifying build projects.
 
 0.9.4 (TBoshoven)
 -----------------
