@@ -2,7 +2,7 @@ name: Tests
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - master
