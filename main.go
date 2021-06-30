@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -42,6 +43,24 @@ func getAffectedProjects(projects []Project, changedFiles []string) []Project {
 	return affectedProjects
 }
 
+func projectsFromBuildProjects(buildProjects string, projects []Project) []Project {
+	if buildProjects == "*" {
+		return projects
+	}
+
+	projectNames := strings.Split(buildProjects, ",")
+
+	affectedProjects := make([]Project, 0)
+	for _, projectName := range projectNames {
+		for _, configProject := range projects {
+			if projectName == configProject.Label {
+				affectedProjects  = append(affectedProjects, configProject)
+			}
+		}
+	}
+	return affectedProjects
+}
+
 func main() {
 	logLevel := getEnv(pluginPrefix+"LOG_LEVEL", "info")
 	ll, err := log.ParseLevel(logLevel)
@@ -52,16 +71,23 @@ func main() {
 	log.SetLevel(ll)
 
 	config := NewConfig(os.Getenv(pluginPrefix + "DYNAMIC_PIPELINE"))
-	changedFiles := getChangedFiles()
-	if len(changedFiles) == 0 {
-		log.Info("No files were changed")
-		os.Exit(0)
-	}
+	buildProjects := os.Getenv(pluginPrefix+"BUILD_PROJECTS")
 
-	affectedProjects := getAffectedProjects(config.Projects, changedFiles)
-	if len(affectedProjects) == 0 {
-		log.Info("No project was affected from git changes")
-		os.Exit(0)
+	var affectedProjects []Project
+	if len(buildProjects) > 0 {
+		affectedProjects = projectsFromBuildProjects(buildProjects, config.Projects)
+	} else {
+		changedFiles := getChangedFiles()
+		if len(changedFiles) == 0 {
+			log.Info("No files were changed")
+			os.Exit(0)
+		}
+
+		affectedProjects = getAffectedProjects(config.Projects, changedFiles)
+		if len(affectedProjects) == 0 {
+			log.Info("No project was affected from git changes")
+			os.Exit(0)
+		}
 	}
 
 	pipeline := generatePipeline(config.Steps, config.Env, affectedProjects)
