@@ -40,6 +40,32 @@ steps:
     TEST_ENV_PIPELINE: test-pipeline
   key: bootstrap
   label: bootstrap
+- build:
+    env:
+      TEST_ENV_PIPELINE: test-pipeline
+  command:
+  - make trigger-step
+  key: trigger-step
+  label: trigger-another-pipeline
+  trigger: my-other-build-pipeline
+- build:
+    env:
+      EXISTING_ENV_VAR: persisted
+      TEST_ENV_PIPELINE: test-pipeline
+  command:
+  - make trigger-step
+  key: trigger-step
+  label: trigger-another-pipeline
+  trigger: my-other-build-pipeline
+- build:
+    env:
+      TEST_ENV_PIPELINE: test-pipeline
+    message: has existing build key
+  command:
+  - make trigger-step
+  key: trigger-step
+  label: trigger-another-pipeline
+  trigger: my-other-build-pipeline
 - command:
   - cd \$\$BUILDPIPE_PROJECT_PATH
   - make test
