@@ -1,5 +1,10 @@
 # Changelog
 
+0.11.0 (rikheijdens)
+-----------------
+
+1. Buildpipe now enforces clean checkouts in order to ensure that changes are being detected properly.
+
 0.10.0 (boyntoni)
 -----------------
 

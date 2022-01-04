@@ -15,7 +15,7 @@ Example
 steps:
   - label: ":buildkite:"
     plugins:
-      - jwplayer/buildpipe#v0.10.0:
+      - jwplayer/buildpipe#v0.11.0:
           dynamic_pipeline: dynamic_pipeline.yml
 ```
 
@@ -221,25 +221,6 @@ steps:
     env:
       BUILDKITE_PLUGIN_BUILDPIPE_DYNAMIC_PIPELINE: path/to/dynamic_pipeline.yml
       BUILDKITE_PLUGIN_BUILDPIPE_LOG_LEVEL: debug
-```
-
-Troubleshooting
----------------
-
-### Buildpipe is incorrectly showing project as changed
-
-Buildkite doesn\'t by default do clean checkouts. To enable clean
-checkouts set the `BUILDKITE_CLEAN_CHECKOUT` [environment variable](https://buildkite.com/docs/pipelines/environment-variables). An
-example is to modify the pre-checkout hook,
-`.buildkite/hooks/pre-checkout`:
-
-```bash
-#!/bin/bash
-set -euo pipefail
-
-echo '--- :house_with_garden: Setting up pre-checkout'
-
-export BUILDKITE_CLEAN_CHECKOUT="true"
 ```
 
 Testing
