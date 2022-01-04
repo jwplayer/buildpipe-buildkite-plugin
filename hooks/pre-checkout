@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+
+echo '--- :house_with_garden: Setting up pre-checkout'
+export BUILDKITE_CLEAN_CHECKOUT="true"
