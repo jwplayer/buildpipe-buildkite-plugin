@@ -143,14 +143,12 @@ func normaliseWorkspaceStep(stepMap map[interface{}]interface{}, steps []interfa
 		for _, dependency := range inputDependencyList {
 			depStr := dependency.(string)
 
-			if step := findStepByKey(steps, depStr); step != nil {
-				if isProjectScopeStep(step) {
-					for _, project := range projects {
-						generatedDependencyList = append(generatedDependencyList, fmt.Sprintf("%s:%s", depStr, project.Label))
-					}
-				} else {
-					generatedDependencyList = append(generatedDependencyList, depStr)
+			if step := findStepByKey(steps, depStr); step != nil && isProjectScopeStep(step) {
+				for _, project := range projects {
+					generatedDependencyList = append(generatedDependencyList, fmt.Sprintf("%s:%s", depStr, project.Label))
 				}
+			} else {
+				generatedDependencyList = append(generatedDependencyList, depStr)
 			}
 		}
 

@@ -8,10 +8,18 @@ import (
 )
 
 func TestNormaliseWorkspaceStep(t *testing.T) {
+	projects := []Project{
+		{
+			Label: "projectA",
+		},
+		{
+			Label: "projectB",
+		},
+	}
+
 	testCases := map[string]struct {
 		step         string
 		steps        string
-		projects     []Project
 		expectedStep string
 	}{
 		"should do nothing when there is no depends_on": {
@@ -40,14 +48,6 @@ command:
   branches: "master"
   command:
     - make tag-release`,
-			projects: []Project{
-				{
-					Label: "projectA",
-				},
-				{
-					Label: "projectB",
-				},
-			},
 			expectedStep: `
 label: tag
 branches: "master"
@@ -83,14 +83,6 @@ command:
   branches: "master"
   command:
     - make tag-release`,
-			projects: []Project{
-				{
-					Label: "projectA",
-				},
-				{
-					Label: "projectB",
-				},
-			},
 			expectedStep: `
 label: tag
 branches: "master"
@@ -128,19 +120,49 @@ command:
   branches: "master"
   command:
     - make tag-release`,
-			projects: []Project{
-				{
-					Label: "projectA",
-				},
-				{
-					Label: "projectB",
-				},
-			},
+
 			expectedStep: `
 label: tag
 branches: "master"
 depends_on:
   - build
+command:
+  - make tag-release`,
+		},
+		"should not update depends_on when couldn't find a step for the dependent key": {
+			step: `
+label: tag
+branches: "master"
+depends_on:
+  - non_exist_key
+command:
+  - make tag-release`,
+			steps: `
+- label: build
+  key: build
+  branches: "master"
+  env:
+    TEST_ENV_STEP: test-step
+  command:
+    - cd $$BUILDPIPE_PROJECT_PATH
+    - make build
+    - make publish-image
+  agents:
+    - queue=build
+  depends_on:
+    - bootstrap # the rendered template should not include the project name for a non-project step
+    - test # the rendered template should include the project name for a project-scoped step
+- wait
+- label: tag
+  branches: "master"
+  command:
+    - make tag-release`,
+
+			expectedStep: `
+label: tag
+branches: "master"
+depends_on:
+  - non_exist_key
 command:
   - make tag-release`,
 		},
@@ -158,7 +180,7 @@ command:
 			expectedStep := map[interface{}]interface{}{}
 			assert.NoError(t, yaml.Unmarshal([]byte(tc.expectedStep), expectedStep))
 
-			normaliseWorkspaceStep(step, steps, tc.projects)
+			normaliseWorkspaceStep(step, steps, projects)
 			assert.Equal(t, expectedStep, step)
 		})
 	}
