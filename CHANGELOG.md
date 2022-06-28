@@ -1,5 +1,10 @@
 # Changelog
 
+0.10.1 (TBoshoven)
+------------------
+
+1. Re-tag to properly pick the proper version when using the hook.
+
 0.10.0 (boyntoni)
 -----------------
 
