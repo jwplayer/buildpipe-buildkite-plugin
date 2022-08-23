@@ -104,8 +104,28 @@ func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projec
 
 		env, foundEnv := stepMap["env"].(map[interface{}]interface{})
 		_, foundBlockStep := stepMap["block"].(string)
+		_, foundTriggerStep := stepMap["trigger"].(string)
 
-		if !foundBlockStep {
+		if foundTriggerStep {
+			// Is there a build property
+			build, foundBuild := stepMap["build"].(map[interface{}]interface{})
+
+			if (!foundBuild) {
+				build = make(map[interface{}]interface{}) // TODO allow nesting
+				stepMap["build"] = build
+			}
+
+			buildEnv, foundBuildEnv := build["env"].(map[interface{}]interface{})
+
+			if (!foundBuildEnv) {
+				buildEnv = make(map[interface{}]interface{})
+				build["env"] = buildEnv // env TODO add to build
+			}
+
+			for envVarName, envVarValue := range pipelineEnv {
+				buildEnv[envVarName] = envVarValue
+			}
+		} else if !foundBlockStep {
 			if !foundEnv {
 				env = make(map[interface{}]interface{})
 				stepMap["env"] = env

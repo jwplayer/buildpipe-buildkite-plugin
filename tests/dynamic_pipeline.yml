@@ -21,6 +21,26 @@ steps: # the same schema as regular buildkite pipeline steps
     key: bootstrap
     command:
       - make bootstrap
+  - trigger: my-other-build-pipeline
+    label: trigger-another-pipeline # a non project scoped step (to test depends_on handling)
+    key: trigger-step
+    command:
+      - make trigger-step
+  - trigger: my-other-build-pipeline
+    label: trigger-another-pipeline # a non project scoped step (to test depends_on handling)
+    key: trigger-step
+    build:
+      env:
+        EXISTING_ENV_VAR: persisted
+    command:
+      - make trigger-step
+  - trigger: my-other-build-pipeline
+    label: trigger-another-pipeline # a non project scoped step (to test depends_on handling)
+    key: trigger-step
+    build:
+      message: 'has existing build key'
+    command:
+      - make trigger-step
   - label: test
     key: test
     env:
