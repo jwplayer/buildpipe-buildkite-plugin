@@ -104,7 +104,7 @@ func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projec
 
 		env, foundEnv := stepMap["env"].(map[interface{}]interface{})
 		_, foundBlockStep := stepMap["block"].(string)
-		_, foundWaitStep := stepMap["wait"].(string)
+		_, foundWaitStep := stepMap["wait"]
 
 		if !foundBlockStep && !foundWaitStep {
 			if !foundEnv {

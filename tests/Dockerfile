@@ -7,7 +7,7 @@ COPY .	.
 RUN make clean
 RUN make build-linux
 
-FROM buildkite/plugin-tester
+FROM buildkite/plugin-tester:v1.1.0
 
 COPY .	.
 
