@@ -1,5 +1,10 @@
 # Changelog
 
+0.10.2 (oallenj)
+------------------
+
+1. Fix buildpipe not working if any attributes are used on the wait step
+
 0.10.1 (TBoshoven)
 ------------------
 

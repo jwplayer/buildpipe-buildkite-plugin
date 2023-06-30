@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.10.1}"
+buildpipe_version="${BUILDKITE_PLUGIN_BUILDPIPE_VERSION:-0.10.2}"
 is_test="${BUILDKITE_PLUGIN_BUILDPIPE_TEST_MODE:-false}"
 
 if [[ "$is_test" == "false" ]]; then
