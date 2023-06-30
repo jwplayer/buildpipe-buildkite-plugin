@@ -28,7 +28,7 @@ steps: # the same schema as regular buildkite pipeline steps
     command:
       - cd $$BUILDPIPE_PROJECT_PATH # BUILDPIPE_PROJECT_PATH will be set by buildpipe
       - make test
-  - wait
+  - wait: ~
   - label: build
     branches: "master"
     env:

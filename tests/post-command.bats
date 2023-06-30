@@ -51,7 +51,7 @@ steps:
     TEST_ENV_PROJECT: test-project
   key: test:project1
   label: test project1
-- wait
+- wait: null
 - agents:
   - queue=build
   branches: master
