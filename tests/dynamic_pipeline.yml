@@ -73,3 +73,5 @@ steps: # the same schema as regular buildkite pipeline steps
     command:
       - cd $$BUILDPIPE_PROJECT_PATH
       - make deploy-prod
+notify:
+  - email: "example@example.com"

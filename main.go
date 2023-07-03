@@ -15,6 +15,7 @@ type Config struct {
 	Projects []Project         `yaml:"projects"`
 	Steps    []interface{}     `yaml:"steps"`
 	Env      map[string]string `yaml:"env"`
+	Notify   []interface{}     `yaml:"notify"`
 }
 
 func NewConfig(filename string) *Config {
@@ -54,7 +55,7 @@ func projectsFromBuildProjects(buildProjects string, projects []Project) []Proje
 	for _, projectName := range projectNames {
 		for _, configProject := range projects {
 			if projectName == configProject.Label {
-				affectedProjects  = append(affectedProjects, configProject)
+				affectedProjects = append(affectedProjects, configProject)
 			}
 		}
 	}
@@ -71,7 +72,7 @@ func main() {
 	log.SetLevel(ll)
 
 	config := NewConfig(os.Getenv(pluginPrefix + "DYNAMIC_PIPELINE"))
-	buildProjects := os.Getenv(pluginPrefix+"BUILD_PROJECTS")
+	buildProjects := os.Getenv(pluginPrefix + "BUILD_PROJECTS")
 
 	var affectedProjects []Project
 	if len(buildProjects) > 0 {
@@ -90,7 +91,7 @@ func main() {
 		}
 	}
 
-	pipeline := generatePipeline(config.Steps, config.Env, affectedProjects)
+	pipeline := generatePipeline(config.Steps, config.Notify, config.Env, affectedProjects)
 
 	uploadPipeline(*pipeline)
 }
