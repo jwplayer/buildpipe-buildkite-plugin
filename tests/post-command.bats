@@ -126,5 +126,7 @@ steps:
     BUILDPIPE_SCOPE: project
     TEST_ENV_PIPELINE: test-pipeline
   label: deploy-prd project2
+notify:
+- email: example@example.com
 EOM
 }

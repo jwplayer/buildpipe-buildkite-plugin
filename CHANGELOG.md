@@ -1,5 +1,10 @@
 # Changelog
 
+0.10.3 (oallenj)
+------------------
+
+1. Allow buildpipe to use buildkite's notification.
+
 0.10.2 (oallenj)
 ------------------
 

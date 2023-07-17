@@ -11,7 +11,8 @@ import (
 )
 
 type Pipeline struct {
-	Steps []interface{} `yaml:"steps"`
+	Steps  []interface{} `yaml:"steps"`
+	Notify []interface{} `yaml:"notify,omitempty"`
 }
 
 func generateProjectSteps(steps []interface{}, step interface{}, projects []Project) []interface{} {
@@ -92,7 +93,7 @@ func findStepByKey(steps []interface{}, stepKey string) map[interface{}]interfac
 	return nil
 }
 
-func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projects []Project) *Pipeline {
+func generatePipeline(steps []interface{}, notify []interface{}, pipelineEnv map[string]string, projects []Project) *Pipeline {
 	generatedSteps := make([]interface{}, 0)
 
 	for _, step := range steps {
@@ -127,7 +128,8 @@ func generatePipeline(steps []interface{}, pipelineEnv map[string]string, projec
 	}
 
 	return &Pipeline{
-		Steps: generatedSteps,
+		Steps:  generatedSteps,
+		Notify: notify,
 	}
 }
 
