@@ -30,6 +30,7 @@ steps: # the same schema as regular buildkite pipeline steps
       - make test
   - wait: ~
   - label: build
+    key: build
     branches: "master"
     env:
       BUILDPIPE_SCOPE: project
@@ -46,6 +47,9 @@ steps: # the same schema as regular buildkite pipeline steps
   - wait
   - label: tag
     branches: "master"
+    depends_on:
+      - bootstrap
+      - build
     command:
       - make tag-release
   - wait

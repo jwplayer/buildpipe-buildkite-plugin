@@ -1,0 +1,13 @@
+linters:
+  disable:
+    - gocritic
+    - gosec
+
+  enable:
+    - govet
+    - errcheck
+    - megacheck
+    - misspell
+    - goconst
+    - revive
+    - goimports

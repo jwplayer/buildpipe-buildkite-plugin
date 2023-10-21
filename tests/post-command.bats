@@ -69,6 +69,7 @@ steps:
     TEST_ENV_PIPELINE: test-pipeline
     TEST_ENV_PROJECT: test-project
     TEST_ENV_STEP: test-step
+  key: build:project1
   label: build project1
 - agents:
   - queue=build
@@ -86,11 +87,16 @@ steps:
     BUILDPIPE_SCOPE: project
     TEST_ENV_PIPELINE: test-pipeline
     TEST_ENV_STEP: test-step
+  key: build:project2
   label: build project2
 - wait
 - branches: master
   command:
   - make tag-release
+  depends_on:
+  - bootstrap
+  - build:project1
+  - build:project2
   env:
     TEST_ENV_PIPELINE: test-pipeline
   label: tag

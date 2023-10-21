@@ -21,7 +21,7 @@ quality:
 	go fmt
 	go mod tidy
 ifneq (${DOCKER},)
-	docker run -v ${PWD}:/src -w /src -it golangci/golangci-lint golangci-lint run --true gocritic --true gosec --true golint --true stylecheck --exclude-use-default=false
+	docker run -v ${PWD}:/src -w /src -it golangci/golangci-lint golangci-lint run
 endif
 
 .PHONY: test

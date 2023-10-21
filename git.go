@@ -23,7 +23,7 @@ func dedupe(list []string) []string {
 
 	for _, item := range list {
 		_, ok := set[item]
-		if ok == false {
+		if !ok {
 			set[item] = true
 			unique = append(unique, item)
 		}
@@ -64,7 +64,7 @@ func determineGitArgs(branch string, defaultBranch string) []string {
 }
 
 func index(slice []string, item string) int {
-	for i, _ := range slice {
+	for i := range slice {
 		if slice[i] == item {
 			return i
 		}

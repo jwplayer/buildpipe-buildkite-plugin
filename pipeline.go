@@ -123,6 +123,7 @@ func generatePipeline(steps []interface{}, notify []interface{}, pipelineEnv map
 			projectSteps := generateProjectSteps(steps, step, projects)
 			generatedSteps = append(generatedSteps, projectSteps...)
 		} else {
+			normaliseWorkspaceStep(stepMap, steps, projects)
 			generatedSteps = append(generatedSteps, step)
 		}
 	}
@@ -133,6 +134,31 @@ func generatePipeline(steps []interface{}, notify []interface{}, pipelineEnv map
 	}
 }
 
+func normaliseWorkspaceStep(stepMap map[interface{}]interface{}, steps []interface{}, projects []Project) {
+	if val, ok := stepMap["depends_on"]; ok {
+		// depends_on can be an array or a string
+		inputDependencyList, ok := val.([]interface{})
+		if !ok {
+			inputDependencyList = []interface{}{val}
+		}
+
+		generatedDependencyList := []interface{}{}
+		for _, dependency := range inputDependencyList {
+			depStr := dependency.(string)
+
+			if step := findStepByKey(steps, depStr); step != nil && isProjectScopeStep(step) {
+				for _, project := range projects {
+					generatedDependencyList = append(generatedDependencyList, fmt.Sprintf("%s:%s", depStr, project.Label))
+				}
+			} else {
+				generatedDependencyList = append(generatedDependencyList, depStr)
+			}
+		}
+
+		stepMap["depends_on"] = generatedDependencyList
+	}
+}
+
 func uploadPipeline(pipeline Pipeline) {
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "buildpipe-")
 	if err != nil {
@@ -140,7 +166,7 @@ func uploadPipeline(pipeline Pipeline) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	data, err := yaml.Marshal(&pipeline)
+	data, _ := yaml.Marshal(&pipeline)
 
 	fmt.Printf("Pipeline:\n%s", string(data))
 
